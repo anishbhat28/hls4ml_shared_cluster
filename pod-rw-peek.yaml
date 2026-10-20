@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rw-peek
+  namespace: hls4ml-nrp
+spec:
+  restartPolicy: Never
+  containers:
+  - name: peek
+    image: busybox:1.36
+    command: ["sh", "-c", "sleep 3600"]
+    resources:
+      requests: {cpu: "1", memory: 2Gi}
+      limits:   {cpu: "1", memory: 2Gi}
+    volumeMounts:
+    - {name: work, mountPath: /work}
+  volumes:
+  - name: work
+    persistentVolumeClaim: {claimName: hls4ml-work}

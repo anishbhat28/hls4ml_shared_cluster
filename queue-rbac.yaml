@@ -1,0 +1,19 @@
+# Lets the in-cluster queue runner list and create Jobs in hls4ml-nrp (and nothing else).
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: rw-queue, namespace: hls4ml-nrp}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: rw-queue, namespace: hls4ml-nrp}
+rules:
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["get", "list", "watch", "create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: rw-queue, namespace: hls4ml-nrp}
+subjects:
+- {kind: ServiceAccount, name: rw-queue, namespace: hls4ml-nrp}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: rw-queue}

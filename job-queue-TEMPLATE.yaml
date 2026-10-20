@@ -1,0 +1,39 @@
+# In-cluster version of run_queue.sh: submits the build Jobs with at most N rw-* jobs active.
+# Runs on the cluster, so your Mac can be off. Rerunning is safe: existing jobs are skipped.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: __QN__
+  namespace: hls4ml-nrp
+spec:
+  backoffLimit: 5
+  template:
+    spec:
+      serviceAccountName: rw-queue
+      restartPolicy: OnFailure
+      containers:
+      - name: queue
+        image: alpine/k8s:1.30.4
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          N=__N__
+          active() {
+            kubectl -n hls4ml-nrp get jobs -o jsonpath='{range .items[?(@.status.active)]}{.metadata.name}{"\n"}{end}' | grep -c '^rw-'
+          }
+          for f in __ORDER__; do
+            name=${f#job-}; name=${name%.yaml}
+            if kubectl -n hls4ml-nrp get job "$name" >/dev/null 2>&1; then echo "skip $name (exists)"; continue; fi
+            while [ "$(active)" -ge "$N" ]; do sleep 300; done
+            kubectl apply -f /jobs/$f && echo "$(date -u '+%a %H:%M UTC') started $name"
+            sleep 30
+          done
+          echo "all submitted"
+        resources:
+          requests: {cpu: 100m, memory: 256Mi}
+          limits:   {cpu: 100m, memory: 256Mi}
+        volumeMounts:
+        - {name: jobs, mountPath: /jobs}
+      volumes:
+      - name: jobs
+        configMap: {name: __QN__-jobs}

@@ -1,0 +1,165 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rw-g-jet-r2-w8-lat-s1
+  namespace: hls4ml-nrp
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        topology.kubernetes.io/region: us-west
+      containers:
+      - name: build
+        image: gitlab-registry.nrp-nautilus.io/nrp/coder-images/vivado-vitis
+        env:
+        - {name: NAME,   value: "rw-g-jet-r2-w8-lat"}
+        - {name: MODEL,  value: "jet"}
+        - {name: RF,     value: "2"}
+        - {name: PREC,   value: "w8i2"}
+        - {name: STRAT,  value: "Latency"}
+        - {name: CLK,    value: "3.333"}
+        - {name: MEM_REQUEST, value: "40Gi"}
+        - {name: CPU_REQUEST, value: "8"}
+        - {name: KERNEL_SLR, value: "SLR2"}
+        - name: NODE_NAME
+          valueFrom: {fieldRef: {fieldPath: spec.nodeName}}
+        command: ["/bin/bash","-c"]
+        args:
+        - |
+          set -eo pipefail
+          OUT=/work/rw/builds/$NAME
+          rm -rf $OUT && mkdir -p $OUT
+          env | grep -E '^(NAME|MODEL|RF|PREC|STRAT|CLK|MEM_REQUEST|CPU_REQUEST|KERNEL_SLR|NODE_NAME)=' | sort > $OUT/config.txt
+          lscpu 2>/dev/null | grep -E 'Model name|^CPU\(s\)|MHz' >> $OUT/config.txt || true
+          cat $OUT/config.txt
+
+          # ---- logging: stage times + memory every 15 s ----
+          echo init > /tmp/stage
+          stage() { echo "$1" > /tmp/stage; echo "$(date +%s),$1" >> $OUT/stages.csv; echo "##### STAGE $1 $(date)"; }
+          echo "unix_time,stage,mem_current_bytes,mem_anon_bytes,cpu_usage_usec" > $OUT/mem.csv
+          ( while true; do
+              cur=$(cat /sys/fs/cgroup/memory.current 2>/dev/null || cat /sys/fs/cgroup/memory/memory.usage_in_bytes)
+              anon=$(awk '$1=="anon"{print $2}' /sys/fs/cgroup/memory.stat 2>/dev/null || echo NA)
+              cpu=$(awk '$1=="usage_usec"{print $2}' /sys/fs/cgroup/cpu.stat 2>/dev/null || echo NA)
+              echo "$(date +%s),$(cat /tmp/stage),$cur,$anon,$cpu" >> $OUT/mem.csv
+              sleep 15
+            done ) &
+          trap 'echo "$(date +%s),exit" >> $OUT/stages.csv; cat /sys/fs/cgroup/memory.peak > $OUT/peak_bytes.txt 2>/dev/null || true' EXIT
+
+          # ---- tools ----
+          export XILINXD_LICENSE_FILE=2100@xilinxd.xilinx-dev
+          export PLATFORM_REPO_PATHS=/opt/xilinx/platforms
+          source /opt/xilinx/xrt/setup.sh
+          source /tools/Xilinx/Vitis/2024.2/settings64.sh
+          [ -f /work/fakelib/libudev.so.1 ] && export LD_LIBRARY_PATH=/work/fakelib:$LD_LIBRARY_PATH
+          python3 -m venv --system-site-packages /tmp/venv
+          source /tmp/venv/bin/activate
+          pip install -q /work/rw/wheels/hls4ml-*.whl
+
+          # ---- 1. generate + C-sim predictions ----
+          stage generate
+          python3 - <<'PY'
+          import os, numpy as np, keras, hls4ml
+          e = os.environ
+          out = f"/work/rw/builds/{e['NAME']}"
+          model = keras.models.load_model(f"/work/rw/models/{e['MODEL']}.h5", compile=False)
+          cfg = hls4ml.utils.config_from_keras_model(model, granularity='model', backend='VitisUnified')
+          # PREC: a single type for everything, or 'w8iN' = 8-bit weights/biases with N integer bits, 16-bit everything else
+          PRECS = {f'w8i{i}': {'default': 'ap_fixed<16,6>', 'weight': f'ap_fixed<8,{i}>', 'bias': f'ap_fixed<8,{i}>'} for i in (1, 2, 3)}
+          PRECS['w8a16'] = PRECS['w8i3']
+          cfg['Model']['Precision'] = PRECS.get(e['PREC'], e['PREC'])
+          cfg['Model']['ReuseFactor'] = int(e['RF'])
+          cfg['Model']['Strategy'] = e['STRAT']
+          hm = hls4ml.converters.convert_from_keras_model(
+              model, backend='VitisUnified', io_type='io_stream',
+              output_dir='/scratch/prj', project_name='myproject', hls_config=cfg,
+              board='alveo-u55c', driver='xrt', axi_mode='axi_master',
+              kernel_slr=(e['KERNEL_SLR'] or False),
+              clock_period=float(e['CLK']), clock_uncertainty='27%')
+          hm.write()
+          hm.compile()
+          import json
+          json.dump([{'name': l.name, 'class': l.class_name, 'reuse_factor': l.get_attr('reuse_factor'),
+                      'n_in': l.get_attr('n_in'), 'n_out': l.get_attr('n_out')} for l in hm.get_layers()],
+                    open(f'{out}/layers.json', 'w'), indent=1, default=str)
+          for tag in ['test', 'stress']:
+              X = np.load(f'/work/rw/data/X_{tag}.npy')
+              if len(model.input_shape) == 3:
+                  X = X.reshape(-1, 16, 1)
+              np.save(f'{out}/y_csim_{tag}.npy', np.asarray(hm.predict(np.ascontiguousarray(X)), dtype=np.float32).reshape(len(X), -1))
+              np.save(f'{out}/y_keras_{tag}.npy', model.predict(X, verbose=0).astype(np.float32).reshape(len(X), -1))
+          print('generated + C-sim done')
+          PY
+
+          export HLSDIR=/scratch/prj/vitis_workspace/myproject
+          export LINKDIR=/scratch/prj/vitis_workspace/system_link
+
+          # ---- 2. HLS synthesis + packaging ----
+          stage csynth
+          (cd $HLSDIR && v++ -c --mode hls --config hls_kernel_config_csim.cfg --work_dir vitis_unified_project)
+          stage package
+          (cd $HLSDIR && vitis-run --mode hls --package --config hls_kernel_config_csim.cfg --work_dir vitis_unified_project)
+          grep -rh "Estimated Fmax" $HLSDIR/vitis_unified_project/ | head -2 | tee $OUT/hls_fmax.txt || true
+          find $HLSDIR/vitis_unified_project -name '*csynth.rpt' -exec cp {} $OUT/ \; || true
+
+          # ---- 3. link config as generated by hls4ml (no edits): record kernel name, show config ----
+          python3 - <<'PY'
+          import os, glob, json, zipfile, xml.etree.ElementTree as ET
+          hls, link = os.environ['HLSDIR'], os.environ['LINKDIR']
+          xo = max(glob.glob(f'{hls}/**/*.xo', recursive=True), key=os.path.getmtime)
+          z = zipfile.ZipFile(xo)
+          kernel = ET.fromstring(z.read([n for n in z.namelist() if n.endswith('kernel.xml')][0])).find('.//kernel')
+          args = sorted((a for a in kernel.iter('arg') if a.get('addressQualifier') == '1'), key=lambda a: int(a.get('id')))
+          json.dump({'xo': xo, 'kernel': kernel.get('name'), 'pointer_args': [a.get('name') for a in args]},
+                    open(f"/work/rw/builds/{os.environ['NAME']}/meta.json", 'w'), indent=1)
+          cfg = open(f'{link}/link_system.cfg').read()
+          open(f"/work/rw/builds/{os.environ['NAME']}/link_system.cfg", 'w').write(cfg)
+          print(cfg)
+          PY
+
+          # ---- gate: decide from the csynth report whether the link is worth running ----
+          stage gate
+          python3 - <<'PY'
+          import os, re, json
+          out = f"/work/rw/builds/{os.environ['NAME']}"
+          cs = open(f'{out}/myproject_axi_master_csynth.rpt').read()
+          bram, dsp, ff, lut = map(int, re.search(r'\|Total\s*\|\s*(\d+)\|\s*(\d+)\|\s*(\d+)\|\s*(\d+)\|', cs).groups())
+          pinned = bool(os.environ['KERNEL_SLR'])
+          SLR_DSP = 2879            # DSPs available to the dynamic region of one U55C SLR (from VPL 30-859)
+          if pinned and dsp > SLR_DSP:
+              verdict = 'STOP: placement (csynth DSP > one SLR)'
+          elif lut > 165000 and ff > 88000:
+              verdict = 'RISK: routing (csynth LUT > 165k and FF > 88k)'
+          else:
+              verdict = 'GO'
+          g = {'dsp': dsp, 'lut': lut, 'ff': ff, 'bram': bram, 'kernel_slr': os.environ['KERNEL_SLR'] or None, 'verdict': verdict}
+          json.dump(g, open(f'{out}/gate.json', 'w'), indent=1)
+          print('GATE', json.dumps(g))
+          PY
+          # hand the generated project to the link job (link runs in a separate, larger job)
+          mkdir -p /work/rw/bundles
+          tar czf /work/rw/bundles/$NAME.tgz -C /scratch prj
+          ls -l /work/rw/bundles/$NAME.tgz
+          stage done
+          echo "########## STAGE1 RESULT $NAME node=$NODE_NAME ##########"
+          cat $OUT/stages.csv
+          echo "memory_peak_bytes $(cat /sys/fs/cgroup/memory.peak 2>/dev/null || echo NA)"
+          echo "########## END ##########"
+        resources:
+          requests: {cpu: "2", memory: 8Gi, ephemeral-storage: 6Gi}
+          limits:   {cpu: "2", memory: 8Gi, ephemeral-storage: 6Gi}
+        volumeMounts:
+        - {name: work,  mountPath: /work}
+        - {name: tools, mountPath: /tools/Xilinx, readOnly: true}
+        - {name: scratch, mountPath: /scratch}
+      volumes:
+      - name: scratch
+        emptyDir: {}
+      - name: work
+        persistentVolumeClaim: {claimName: hls4ml-work}
+      - name: tools
+        persistentVolumeClaim:
+          claimName: xilinx-tools
+          readOnly: true

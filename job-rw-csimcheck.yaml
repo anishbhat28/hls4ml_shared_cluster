@@ -1,0 +1,60 @@
+# Accuracy check with hls4ml predict (C-sim) only: no synthesis, no card. ~15 min.
+# For each model and precision: C-sim accuracy, Keras accuracy, argmax agreement.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rw-csimcheck
+  namespace: hls4ml-nrp
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        topology.kubernetes.io/region: us-west
+      containers:
+      - name: csim
+        image: gitlab-registry.nrp-nautilus.io/nrp/coder-images/vivado-vitis
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -eo pipefail
+          python3 -m venv --system-site-packages /tmp/venv && source /tmp/venv/bin/activate
+          pip install -q /work/rw/wheels/hls4ml-*.whl
+          python3 - <<'PY'
+          import numpy as np, keras, hls4ml, json
+          X = np.load('/work/rw/data/X_test.npy'); Y = np.load('/work/rw/data/Y_test.npy')
+          PRECS = {
+              'p16':   'ap_fixed<16,6>',
+              'w8a16': {'default': 'ap_fixed<16,6>', 'weight': 'ap_fixed<8,3>', 'bias': 'ap_fixed<8,3>'},
+              'all8':  'ap_fixed<8,3>',
+          }
+          rows = []
+          for name in ['jet', 'big', 'cnn', 'tiny', 'wide']:
+              model = keras.models.load_model(f'/work/rw/models/{name}.h5', compile=False)
+              x = X.reshape(-1, 16, 1) if len(model.input_shape) == 3 else X
+              yk = model.predict(x, verbose=0)
+              for tag, prec in PRECS.items():
+                  cfg = hls4ml.utils.config_from_keras_model(model, granularity='model', backend='VitisUnified')
+                  cfg['Model']['Precision'] = prec
+                  cfg['Model']['ReuseFactor'] = 4
+                  hm = hls4ml.converters.convert_from_keras_model(
+                      model, backend='VitisUnified', io_type='io_stream', output_dir=f'/tmp/c_{name}_{tag}',
+                      project_name='myproject', hls_config=cfg, board='alveo-u55c', driver='xrt', axi_mode='axi_master')
+                  hm.compile()
+                  yc = np.asarray(hm.predict(np.ascontiguousarray(x)), dtype=np.float32).reshape(len(x), -1)
+                  r = {'model': name, 'prec': tag,
+                       'keras_acc': round(float((yk.argmax(1) == Y.argmax(1)).mean()), 4),
+                       'csim_acc': round(float((yc.argmax(1) == Y.argmax(1)).mean()), 4),
+                       'argmax_agree': round(float((yc.argmax(1) == yk.argmax(1)).mean()), 4)}
+                  rows.append(r); print('CSIM', json.dumps(r), flush=True)
+          json.dump(rows, open('/work/rw/csimcheck.json', 'w'), indent=1)
+          PY
+        resources:
+          requests: {cpu: "4", memory: 8Gi}
+          limits:   {cpu: "4", memory: 8Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+      volumes:
+      - name: work
+        persistentVolumeClaim: {claimName: hls4ml-work}

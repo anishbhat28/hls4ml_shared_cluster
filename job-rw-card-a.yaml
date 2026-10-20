@@ -1,0 +1,140 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rw-card-a
+  namespace: hls4ml-nrp
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: card
+        image: gitlab-registry.nrp-nautilus.io/nrp/coder-images/vivado-vitis
+        env:
+        - name: TAG
+          value: a
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        command:
+        - /bin/bash
+        - -c
+        args:
+        - |
+          set -o pipefail
+          echo "card job $TAG start $(date) node=$NODE_NAME"
+          source /opt/xilinx/xrt/setup.sh
+          cat > /tmp/one.py <<'PY'
+          import os, sys, glob, json, time, csv, subprocess
+          import numpy as np, pyxrt
+
+          TAG = os.environ['TAG']
+          data = {t: np.ascontiguousarray(np.load(f'/work/rw/data/X_{t}.npy'), dtype=np.float32) for t in ['test', 'stress']}
+          Y = np.load('/work/rw/data/Y_test.npy')
+          dev = pyxrt.device(0)
+          TO, FROM = pyxrt.xclBOSyncDirection.XCL_BO_SYNC_BO_TO_DEVICE, pyxrt.xclBOSyncDirection.XCL_BO_SYNC_BO_FROM_DEVICE
+
+          def run(k, X):
+              N = len(X)
+              bi = pyxrt.bo(dev, X.nbytes, pyxrt.bo.normal, k.group_id(0))
+              bo = pyxrt.bo(dev, N * 5 * 4, pyxrt.bo.normal, k.group_id(1))
+              bi.write(X.tobytes(), 0); bi.sync(TO)
+              t = time.perf_counter(); r = k(bi, bo, np.uint32(N)); r.wait(); dt = time.perf_counter() - t
+              bo.sync(FROM)
+              return np.frombuffer(bo.read(N * 5 * 4, 0), dtype=np.float32).reshape(N, 5), dt
+
+          rows = []
+          rows = []
+          d = sys.argv[1]
+          name = os.path.basename(d.rstrip('/'))
+          xcl = d + 'myproject.xclbin'
+          if not os.path.exists(xcl):
+              rows.append({'design': name, 'status': 'no_xclbin', 'node': os.environ['NODE_NAME']})
+              print('ROW ' + json.dumps(rows[-1]), flush=True)
+              sys.exit(0)
+          try:
+              meta = json.load(open(d + 'meta.json'))
+              t = time.perf_counter(); uuid = dev.load_xclbin(pyxrt.xclbin(xcl)); load_s = time.perf_counter() - t
+              t = time.perf_counter(); uuid = dev.load_xclbin(pyxrt.xclbin(xcl)); reload_s = time.perf_counter() - t
+              k = pyxrt.kernel(dev, uuid, meta['kernel'])
+              # achieved kernel clock as recorded in the xclbin by the linker (what XRT programs on the card)
+              info = open(d + 'xclbin_info.txt').read() if os.path.exists(d + 'xclbin_info.txt') else ''
+              import re
+              m = re.search(r'Achieved Freq:\s*([\d.]+)', info)
+              clk = float(m.group(1)) if m else ''
+              try:
+                  rep = subprocess.run(['xbutil', 'examine', '-d', 'all', '--report', 'dynamic-regions'],
+                                       capture_output=True, text=True, timeout=60)
+                  open(f'/work/rw/card_xbutil_{TAG}_{name}.txt', 'w').write(rep.stdout + rep.stderr)
+              except Exception as e:
+                  open(f'/work/rw/card_xbutil_{TAG}_{name}.txt', 'w').write(f'xbutil failed: {e}')
+              row = {'design': name, 'status': 'ok', 'node': os.environ['NODE_NAME'],
+                     'load_s': round(load_s, 4), 'reload_s': round(reload_s, 4), 'kernel_clock_mhz': clk}
+              for tag, X in data.items():
+                  hw, dt = run(k, X)
+                  cs = np.load(f'{d}y_csim_{tag}.npy').reshape(len(X), 5)
+                  kr = np.load(f'{d}y_keras_{tag}.npy').reshape(len(X), 5)
+                  row[f'{tag}_run_s'] = round(dt, 6)
+                  # bit-exact: identical float32 bit patterns (also catches NaN payload / signed-zero differences)
+                  row[f'{tag}_hw_eq_csim_bitexact_frac'] = float((hw.view(np.uint32) == cs.view(np.uint32)).all(1).mean())
+                  # value-exact: equal values, NaN==NaN
+                  eq = np.isclose(hw, cs, rtol=0, atol=0, equal_nan=True).all(1)
+                  row[f'{tag}_hw_eq_csim_exact_frac'] = float(eq.mean())
+                  row[f'{tag}_n_mismatch_rows'] = int((~eq).sum())
+                  diff = hw - cs; finite = np.isfinite(diff)
+                  row[f'{tag}_hw_vs_csim_max_abs'] = float(np.abs(diff[finite]).max()) if finite.any() else float('nan')
+                  row[f'{tag}_hw_vs_keras_argmax_agree'] = float((hw.argmax(1) == kr.argmax(1)).mean())
+                  if tag == 'test':
+                      row['hw_accuracy'] = float((hw.argmax(1) == Y.argmax(1)).mean())
+                      row['keras_accuracy'] = float((kr.argmax(1) == Y.argmax(1)).mean())
+                      row['csim_accuracy'] = float((cs.argmax(1) == Y.argmax(1)).mean())
+                      row['inferences_per_s'] = round(len(X) / dt)
+                      # batch-size sweep: launch/DMA overhead vs steady-state throughput (median of 5 runs each)
+                      for n in [1, 10, 100, 1000, 10000]:
+                          ts = sorted(run(k, X[:n])[1] for _ in range(5))
+                          row[f'batch{n}_s'] = round(ts[2], 6)
+                      row['latency_1_us'] = round(row['batch1_s'] * 1e6, 1)
+          except Exception as ex:
+              row = {'design': name, 'status': f'error: {ex}', 'node': os.environ['NODE_NAME']}
+          rows.append(row)
+          print(row, flush=True)
+          print('ROW ' + json.dumps(rows[-1], default=str), flush=True)
+          PY
+          cat > /tmp/merge.py <<'PY'
+          import csv, json, os, sys
+          TAG = os.environ['TAG']
+          rows = [json.loads(l[4:]) for l in open('/tmp/rows.txt') if l.startswith('ROW ')]
+          keys = []
+          for r in rows:
+              for k in r:
+                  if k not in keys: keys.append(k)
+          out = f'/work/rw/card_results_{TAG}.csv'
+          with open(out, 'w', newline='') as f:
+              w = csv.DictWriter(f, fieldnames=keys); w.writeheader(); w.writerows(rows)
+          print('wrote', out, len(rows), 'designs')
+          PY
+          : > /tmp/rows.txt
+          # one fresh process per design, so each releases the card before the next xclbin is loaded
+          for d in /work/rw/builds/*/; do
+            python3 /tmp/one.py "$d" 2>&1 | tee -a /tmp/rows.txt | grep -E "^ROW|Error|error" || true
+          done
+          python3 /tmp/merge.py
+          echo "card job $TAG end $(date)"
+        resources:
+          requests:
+            cpu: '4'
+            memory: 16Gi
+            amd.com/xilinx_u55c_gen3x16_xdma_base_3-0: 1
+          limits:
+            cpu: '4'
+            memory: 16Gi
+            amd.com/xilinx_u55c_gen3x16_xdma_base_3-0: 1
+        volumeMounts:
+        - name: work
+          mountPath: /work
+      volumes:
+      - name: work
+        persistentVolumeClaim:
+          claimName: hls4ml-work

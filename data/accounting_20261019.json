@@ -1,0 +1,1918 @@
+{
+ "queried_at": "2026-10-19T14:48:52.075846",
+ "server": {
+  "protocolVersion": "2025-03-26",
+  "capabilities": {
+   "experimental": {},
+   "prompts": {
+    "listChanged": false
+   },
+   "resources": {
+    "subscribe": false,
+    "listChanged": false
+   },
+   "tools": {
+    "listChanged": false
+   }
+  },
+  "serverInfo": {
+   "name": "NRP Accounting",
+   "version": "1.30.0"
+  },
+  "instructions": "Read-only access to NRP accounting usage data stored in ClickHouse. Use the focused tools for common accounting questions like latest data date, active namespaces, top consumers, filter discovery, timeseries, namespace details, and LLM token usage breakdowns. Resource arguments use canonical names like gpu, cpu, memory, storage, fpga, network, and llm. Common aliases like gpu_hours, gpu-hours, GPU hours, and cpu_core_hours are normalized automatically. For GPU model questions, pair resource='gpu' with gpu_model_name or gpu_model_regex; for example, A100 prompts should use gpu_model_regex='(?i)A100'. Use query_resource_usage for custom infrastructure aggregations and query_llm_token_usage for custom LLM token aggregations."
+ },
+ "tools": {
+  "query_resource_usage": {
+   "description": "Query NRP accounting usage with optional namespace, institution, node, and resource filters.\n\n    If start_date and end_date are both omitted, the tool uses the most recent ingested date.\n    If only one of start_date or end_date is provided, it is treated as a single-day query.\n\n    Resource inputs should use canonical names like gpu, cpu, or llm. For example, use\n    resource='gpu' for GPU-hours queries and resource='llm' for namespace-level token totals.\n    Common aliases such as gpu_hours, gpu-hours, GPU hours, cpu_core_hours, and llm_tokens are\n    accepted and normalized automatically. The unit is returned separately in the unit field.\n\n    Supported group_by values:\n    - date\n    - namespace\n    - institution\n    - pi\n    - commercial\n    - node\n    - node_institution\n    - created_by\n    - resource\n    - raw_resource\n    - gpu_model_name\n    - unit\n    - pod_name (only with granularity='pod')\n\n    GPU model filters should normally be paired with resource='gpu'. For example,\n    \"largest users of A100 GPUs\" maps to top_resource_consumers(\n    dimension='namespace', resource='gpu', gpu_model_regex='(?i)A100').\n    ",
+   "inputSchema": {
+    "properties": {
+     "start_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Start Date"
+     },
+     "end_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "End Date"
+     },
+     "namespace": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Namespace"
+     },
+     "institution": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Institution"
+     },
+     "node": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Node"
+     },
+     "node_regex": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Node Regex"
+     },
+     "node_institution": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Node Institution"
+     },
+     "resource": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Resource"
+     },
+     "raw_resource": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Raw Resource"
+     },
+     "gpu_model_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Name"
+     },
+     "gpu_model_regex": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Regex"
+     },
+     "granularity": {
+      "default": "namespace",
+      "title": "Granularity",
+      "type": "string"
+     },
+     "group_by": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Group By"
+     },
+     "limit": {
+      "default": 500,
+      "title": "Limit",
+      "type": "integer"
+     }
+    },
+    "title": "query_resource_usageArguments",
+    "type": "object"
+   }
+  },
+  "get_latest_data_date": {
+   "description": "Get the most recent ingested accounting date.",
+   "inputSchema": {
+    "properties": {
+     "granularity": {
+      "default": "namespace",
+      "title": "Granularity",
+      "type": "string"
+     }
+    },
+    "title": "get_latest_data_dateArguments",
+    "type": "object"
+   }
+  },
+  "list_filter_values": {
+   "description": "List distinct values observed in accounting usage rows for the filtered date range.\n\n    This is not a static catalog lookup. The returned values come from actual usage rows that match\n    the requested filters and date window. If start_date and end_date are omitted, the tool defaults\n    to the latest ingested day. Check is_truncated and total_count when you need a complete list.\n    Use dimension='gpu_model_name' with resource='gpu' to discover GPU model values.\n    ",
+   "inputSchema": {
+    "properties": {
+     "dimension": {
+      "title": "Dimension",
+      "type": "string"
+     },
+     "granularity": {
+      "default": "namespace",
+      "title": "Granularity",
+      "type": "string"
+     },
+     "start_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Start Date"
+     },
+     "end_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "End Date"
+     },
+     "namespace": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Namespace"
+     },
+     "institution": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Institution"
+     },
+     "node": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Node"
+     },
+     "node_regex": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Node Regex"
+     },
+     "node_institution": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Node Institution"
+     },
+     "resource": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Resource"
+     },
+     "raw_resource": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Raw Resource"
+     },
+     "gpu_model_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Name"
+     },
+     "gpu_model_regex": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Regex"
+     },
+     "prefix": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Prefix"
+     },
+     "regex": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Regex"
+     },
+     "limit": {
+      "default": 100,
+      "title": "Limit",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "dimension"
+    ],
+    "title": "list_filter_valuesArguments",
+    "type": "object"
+   }
+  },
+  "query_llm_token_usage": {
+   "description": "Query daily LLM token usage by namespace, token alias, model, and token type.",
+   "inputSchema": {
+    "properties": {
+     "start_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Start Date"
+     },
+     "end_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "End Date"
+     },
+     "namespace": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Namespace"
+     },
+     "token_alias": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Token Alias"
+     },
+     "model": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Model"
+     },
+     "token_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Token Type"
+     },
+     "group_by": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Group By"
+     },
+     "limit": {
+      "default": 500,
+      "title": "Limit",
+      "type": "integer"
+     }
+    },
+    "title": "query_llm_token_usageArguments",
+    "type": "object"
+   }
+  },
+  "list_llm_filter_values": {
+   "description": "List observed namespaces, token aliases, models, or token types from daily LLM usage rows.",
+   "inputSchema": {
+    "properties": {
+     "dimension": {
+      "title": "Dimension",
+      "type": "string"
+     },
+     "start_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Start Date"
+     },
+     "end_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "End Date"
+     },
+     "namespace": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Namespace"
+     },
+     "token_alias": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Token Alias"
+     },
+     "model": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Model"
+     },
+     "token_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Token Type"
+     },
+     "prefix": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Prefix"
+     },
+     "regex": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Regex"
+     },
+     "limit": {
+      "default": 100,
+      "title": "Limit",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "dimension"
+    ],
+    "title": "list_llm_filter_valuesArguments",
+    "type": "object"
+   }
+  },
+  "list_active_namespaces": {
+   "description": "List namespaces that had observed accounting usage in a date window.\n\n    If start_date and end_date are omitted, this tool defaults to the last 30 days ending on the\n    latest ingested accounting date. Use this for prompts like \"what namespaces had usage this\n    month?\" or \"list active namespaces last week\".\n    ",
+   "inputSchema": {
+    "properties": {
+     "start_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Start Date"
+     },
+     "end_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "End Date"
+     },
+     "institution": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Institution"
+     },
+     "node": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Node"
+     },
+     "node_regex": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Node Regex"
+     },
+     "node_institution": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Node Institution"
+     },
+     "resource": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Resource"
+     },
+     "raw_resource": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Raw Resource"
+     },
+     "gpu_model_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Name"
+     },
+     "gpu_model_regex": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Regex"
+     },
+     "prefix": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Prefix"
+     },
+     "regex": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Regex"
+     },
+     "limit": {
+      "default": 5000,
+      "title": "Limit",
+      "type": "integer"
+     }
+    },
+    "title": "list_active_namespacesArguments",
+    "type": "object"
+   }
+  },
+  "top_resource_consumers": {
+   "description": "Rank the top namespaces, institutions, or nodes for a specific resource.\n\n    Use canonical resource names like gpu, cpu, or llm. For example, use resource='llm' for\n    namespace token rankings. Common aliases such as gpu_hours, gpu-hours, GPU hours,\n    cpu_core_hours, and llm_tokens are accepted and normalized automatically.\n    For GPU model questions, pair resource='gpu' with gpu_model_name or gpu_model_regex.\n    Example: top_resource_consumers(dimension='namespace', resource='gpu', gpu_model_regex='(?i)A100').\n    ",
+   "inputSchema": {
+    "properties": {
+     "dimension": {
+      "title": "Dimension",
+      "type": "string"
+     },
+     "resource": {
+      "title": "Resource",
+      "type": "string"
+     },
+     "start_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Start Date"
+     },
+     "end_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "End Date"
+     },
+     "granularity": {
+      "default": "namespace",
+      "title": "Granularity",
+      "type": "string"
+     },
+     "namespace": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Namespace"
+     },
+     "institution": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Institution"
+     },
+     "node": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Node"
+     },
+     "node_regex": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Node Regex"
+     },
+     "node_institution": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Node Institution"
+     },
+     "raw_resource": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Raw Resource"
+     },
+     "gpu_model_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Name"
+     },
+     "gpu_model_regex": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Regex"
+     },
+     "limit": {
+      "default": 10,
+      "title": "Limit",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "dimension",
+     "resource"
+    ],
+    "title": "top_resource_consumersArguments",
+    "type": "object"
+   }
+  },
+  "get_usage_timeseries": {
+   "description": "Get a daily usage trend for one namespace, institution, commercial flag, node, or node-institution value.\n\n    Resource inputs use canonical names like gpu, cpu, or llm. For example, use resource='llm' for\n    namespace token trends. Common aliases such as gpu_hours, cpu_core_hours, and llm_tokens are\n    accepted and normalized automatically. Pair GPU model filters with resource='gpu'.\n    ",
+   "inputSchema": {
+    "properties": {
+     "dimension": {
+      "title": "Dimension",
+      "type": "string"
+     },
+     "value": {
+      "title": "Value",
+      "type": "string"
+     },
+     "resource": {
+      "title": "Resource",
+      "type": "string"
+     },
+     "start_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Start Date"
+     },
+     "end_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "End Date"
+     },
+     "granularity": {
+      "default": "namespace",
+      "title": "Granularity",
+      "type": "string"
+     },
+     "raw_resource": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Raw Resource"
+     },
+     "gpu_model_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Name"
+     },
+     "gpu_model_regex": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Regex"
+     },
+     "limit": {
+      "default": 366,
+      "title": "Limit",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "dimension",
+     "value",
+     "resource"
+    ],
+    "title": "get_usage_timeseriesArguments",
+    "type": "object"
+   }
+  },
+  "get_namespace_summary": {
+   "description": "Get a namespace summary grouped by resource and unit.\n\n    If resource is provided, use a canonical resource name like gpu, cpu, or llm. Common aliases\n    such as gpu_hours, cpu_core_hours, and llm_tokens are accepted and normalized automatically.\n    Pair GPU model filters with resource='gpu'.\n    ",
+   "inputSchema": {
+    "properties": {
+     "namespace": {
+      "title": "Namespace",
+      "type": "string"
+     },
+     "start_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Start Date"
+     },
+     "end_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "End Date"
+     },
+     "resource": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Resource"
+     },
+     "raw_resource": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Raw Resource"
+     },
+     "gpu_model_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Name"
+     },
+     "gpu_model_regex": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Regex"
+     }
+    },
+    "required": [
+     "namespace"
+    ],
+    "title": "get_namespace_summaryArguments",
+    "type": "object"
+   }
+  },
+  "get_namespace_llm_summary": {
+   "description": "Get a namespace's LLM token summary grouped by token alias, model, and token type.",
+   "inputSchema": {
+    "properties": {
+     "namespace": {
+      "title": "Namespace",
+      "type": "string"
+     },
+     "start_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Start Date"
+     },
+     "end_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "End Date"
+     },
+     "token_alias": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Token Alias"
+     },
+     "model": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Model"
+     },
+     "token_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Token Type"
+     }
+    },
+    "required": [
+     "namespace"
+    ],
+    "title": "get_namespace_llm_summaryArguments",
+    "type": "object"
+   }
+  },
+  "get_namespace_daily_trend": {
+   "description": "Get a namespace's daily trend, defaulting to the last 30 days when no dates are supplied.\n\n    If resource is provided, use a canonical resource name like gpu, cpu, or llm. Common aliases\n    such as gpu_hours, cpu_core_hours, and llm_tokens are accepted and normalized automatically.\n    Pair GPU model filters with resource='gpu'.\n    ",
+   "inputSchema": {
+    "properties": {
+     "namespace": {
+      "title": "Namespace",
+      "type": "string"
+     },
+     "resource": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Resource"
+     },
+     "start_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Start Date"
+     },
+     "end_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "End Date"
+     },
+     "raw_resource": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Raw Resource"
+     },
+     "gpu_model_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Name"
+     },
+     "gpu_model_regex": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Regex"
+     }
+    },
+    "required": [
+     "namespace"
+    ],
+    "title": "get_namespace_daily_trendArguments",
+    "type": "object"
+   }
+  },
+  "get_namespace_llm_daily_trend": {
+   "description": "Get a namespace's daily LLM token trend, optionally filtered by token alias, model, or token type.",
+   "inputSchema": {
+    "properties": {
+     "namespace": {
+      "title": "Namespace",
+      "type": "string"
+     },
+     "token_alias": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Token Alias"
+     },
+     "model": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Model"
+     },
+     "token_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Token Type"
+     },
+     "start_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Start Date"
+     },
+     "end_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "End Date"
+     }
+    },
+    "required": [
+     "namespace"
+    ],
+    "title": "get_namespace_llm_daily_trendArguments",
+    "type": "object"
+   }
+  },
+  "top_nodes_for_namespace": {
+   "description": "Rank the highest-usage nodes for one namespace and one resource.\n\n    Use canonical resource names like gpu, cpu, or llm. Common aliases such as gpu_hours,\n    gpu-hours, GPU hours, cpu_core_hours, and llm_tokens are accepted and normalized automatically.\n    Pair GPU model filters with resource='gpu'.\n    ",
+   "inputSchema": {
+    "properties": {
+     "namespace": {
+      "title": "Namespace",
+      "type": "string"
+     },
+     "resource": {
+      "title": "Resource",
+      "type": "string"
+     },
+     "start_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Start Date"
+     },
+     "end_date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "End Date"
+     },
+     "raw_resource": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Raw Resource"
+     },
+     "gpu_model_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Name"
+     },
+     "gpu_model_regex": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Regex"
+     },
+     "limit": {
+      "default": 10,
+      "title": "Limit",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "namespace",
+     "resource"
+    ],
+    "title": "top_nodes_for_namespaceArguments",
+    "type": "object"
+   }
+  },
+  "get_namespace_details": {
+   "description": "Get namespace metadata, latest summary, recent trend, and top nodes by resource.",
+   "inputSchema": {
+    "properties": {
+     "namespace": {
+      "title": "Namespace",
+      "type": "string"
+     },
+     "trend_days": {
+      "default": 30,
+      "title": "Trend Days",
+      "type": "integer"
+     },
+     "top_node_limit": {
+      "default": 10,
+      "title": "Top Node Limit",
+      "type": "integer"
+     },
+     "top_nodes_resource": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Top Nodes Resource"
+     },
+     "raw_resource": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Raw Resource"
+     },
+     "gpu_model_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "items": {
+         "type": "string"
+        },
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Name"
+     },
+     "gpu_model_regex": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "default": null,
+      "title": "Gpu Model Regex"
+     }
+    },
+    "required": [
+     "namespace"
+    ],
+    "title": "get_namespace_detailsArguments",
+    "type": "object"
+   }
+  }
+ },
+ "calls": [
+  {
+   "tool": "get_latest_data_date",
+   "args": {},
+   "error": false,
+   "result": "{\n  \"granularity\": \"namespace\",\n  \"latest_data_date\": \"2026-10-18\"\n}"
+  },
+  {
+   "tool": "list_filter_values",
+   "args": {},
+   "error": true,
+   "result": "Error executing tool list_filter_values: 1 validation error for list_filter_valuesArguments\ndimension\n  Field required [type=missing, input_value={}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+  },
+  {
+   "tool": "list_filter_values",
+   "args": {
+    "resource": "fpga",
+    "start_date": "2026-07-21",
+    "end_date": "2026-10-19"
+   },
+   "error": true,
+   "result": "Error executing tool list_filter_values: 1 validation error for list_filter_valuesArguments\ndimension\n  Field required [type=missing, input_value={'resource': 'fpga', 'sta...end_date': '2026-10-19'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+  },
+  {
+   "tool": "top_resource_consumers",
+   "args": {
+    "resource": "fpga",
+    "limit": 50,
+    "start_date": "2026-07-21",
+    "end_date": "2026-10-19"
+   },
+   "error": true,
+   "result": "Error executing tool top_resource_consumers: 1 validation error for top_resource_consumersArguments\ndimension\n  Field required [type=missing, input_value={'resource': 'fpga', 'lim...end_date': '2026-10-19'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+  },
+  {
+   "tool": "top_resource_consumers",
+   "args": {
+    "resource": "fpga",
+    "limit": 50,
+    "start_date": "2026-07-21",
+    "end_date": "2026-10-19"
+   },
+   "error": true,
+   "result": "Error executing tool top_resource_consumers: 1 validation error for top_resource_consumersArguments\ndimension\n  Field required [type=missing, input_value={'resource': 'fpga', 'lim...end_date': '2026-10-19'}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+  },
+  {
+   "tool": "query_resource_usage",
+   "args": {
+    "resource": "fpga",
+    "group_by": [
+     "node",
+     "date"
+    ],
+    "start_date": "2026-07-21",
+    "end_date": "2026-10-19"
+   },
+   "error": false,
+   "result": "{\n  \"granularity\": \"namespace\",\n  \"start_date\": \"2026-07-21\",\n  \"end_date\": \"2026-10-19\",\n  \"group_by\": [\n    \"node\",\n    \"date\"\n  ],\n  \"limit\": 500,\n  \"row_count\": 498,\n  \"rows\": [\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-10-18\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-18\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-18\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-18\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-10-18\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-10-18\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-10-17\",\n      \"usage\": 0.083333\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-10-17\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-17\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-17\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-17\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-10-17\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-10-17\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-10-16\",\n      \"usage\": 4.666667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-10-16\",\n      \"usage\": 2.333333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-16\",\n      \"usage\": 47.333334\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-16\",\n      \"usage\": 24.833334\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-16\",\n      \"usage\": 47.333334\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-10-16\",\n      \"usage\": 23.666667\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-10-16\",\n      \"usage\": 23.666667\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-10-15\",\n      \"usage\": 19.666667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-15\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-15\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-15\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-10-15\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-10-15\",\n      \"usage\": 4.5\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-14\",\n      \"usage\": 26.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-14\",\n      \"usage\": 15.833333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-14\",\n      \"usage\": 28.75\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-10-14\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-10-14\",\n      \"usage\": 9.333333\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-10-13\",\n      \"usage\": 9.333333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-13\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-13\",\n      \"usage\": 9.916667\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-13\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-10-13\",\n      \"usage\": 8.583333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-10-13\",\n      \"usage\": 14.583333\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-10-12\",\n      \"usage\": 20.083333\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-10-12\",\n      \"usage\": 17.333333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-12\",\n      \"usage\": 2.833334\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-12\",\n      \"usage\": 17.333333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-12\",\n      \"usage\": 18.083333\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-10-12\",\n      \"usage\": 17.25\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-10-11\",\n      \"usage\": 14.916667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-10-11\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-11\",\n      \"usage\": 2.416667\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-11\",\n      \"usage\": 27.75\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-11\",\n      \"usage\": 43.416666\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-10-11\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-10-11\",\n      \"usage\": 4.083333\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-10-10\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-10\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-10\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-10\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-10-10\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-10-09\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-09\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-09\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-09\",\n      \"usage\": 48.083333\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-10-09\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-10-08\",\n      \"usage\": 0.083333\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-10-08\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-08\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-08\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-08\",\n      \"usage\": 27.0\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-10-08\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-10-08\",\n      \"usage\": 30.833333\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-10-07\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-07\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-07\",\n      \"usage\": 31.083333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-07\",\n      \"usage\": 32.75\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-10-07\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-10-07\",\n      \"usage\": 38.583332\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-10-06\",\n      \"usage\": 16.166667\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-10-06\",\n      \"usage\": 34.5\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-10-06\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-06\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-06\",\n      \"usage\": 29.25\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-06\",\n      \"usage\": 47.666666\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-10-06\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-10-06\",\n      \"usage\": 11.833334\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-10-05\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-10-05\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-05\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-05\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-05\",\n      \"usage\": 32.083333\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-10-05\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-10-05\",\n      \"usage\": 15.666667\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-10-04\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-10-04\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-04\",\n      \"usage\": 39.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-04\",\n      \"usage\": 31.333333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-04\",\n      \"usage\": 28.166666\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-10-04\",\n      \"usage\": 17.916667\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-10-04\",\n      \"usage\": 19.833334\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-10-03\",\n      \"usage\": 19.916667\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-10-03\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-10-03\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-03\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-03\",\n      \"usage\": 39.666666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-03\",\n      \"usage\": 10.5\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-10-03\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-10-03\",\n      \"usage\": 4.166667\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-10-02\",\n      \"usage\": 4.166667\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-10-02\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-10-02\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-02\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-02\",\n      \"usage\": 42.083333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-02\",\n      \"usage\": 13.083333\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-10-02\",\n      \"usage\": 17.0\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-10-02\",\n      \"usage\": 0.083333\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-10-01\",\n      \"usage\": 0.25\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-10-01\",\n      \"usage\": 47.0\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-10-01\",\n      \"usage\": 21.833333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-10-01\",\n      \"usage\": 45.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-10-01\",\n      \"usage\": 24.333333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-10-01\",\n      \"usage\": 7.499999\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-30\",\n      \"usage\": 46.333333\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-30\",\n      \"usage\": 23.166667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-30\",\n      \"usage\": 23.166667\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-30\",\n      \"usage\": 46.333334\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-30\",\n      \"usage\": 46.333334\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-30\",\n      \"usage\": 23.166667\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-09-29\",\n      \"usage\": 0.083333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-29\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-29\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-29\",\n      \"usage\": 25.583334\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-29\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-29\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-29\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-09-28\",\n      \"usage\": 0.083333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-28\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-28\",\n      \"usage\": 1.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-28\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-28\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-28\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-28\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-27\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-27\",\n      \"usage\": 7.749999\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-27\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-27\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-27\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-27\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-09-26\",\n      \"usage\": 0.833333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-26\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-26\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-26\",\n      \"usage\": 43.666666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-26\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-26\",\n      \"usage\": 26.416666\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-26\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-09-26\",\n      \"usage\": 64.333333\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-09-25\",\n      \"usage\": 22.833333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-25\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-25\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-25\",\n      \"usage\": 0.166667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-25\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-25\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-25\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-25\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-09-25\",\n      \"usage\": 96.0\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-09-24\",\n      \"usage\": 15.499999\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-24\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-24\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-24\",\n      \"usage\": 1.75\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-24\",\n      \"usage\": 48.083334\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-24\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-24\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-24\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-09-24\",\n      \"usage\": 96.0\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-23\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-23\",\n      \"usage\": 4.666667\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-23\",\n      \"usage\": 19.416667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-23\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-23\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-23\",\n      \"usage\": 43.5\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-23\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-09-23\",\n      \"usage\": 96.416666\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-22\",\n      \"usage\": 17.166667\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-22\",\n      \"usage\": 8.583333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-22\",\n      \"usage\": 16.75\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-22\",\n      \"usage\": 17.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-22\",\n      \"usage\": 17.166666\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-22\",\n      \"usage\": 8.583333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-09-22\",\n      \"usage\": 34.333333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-21\",\n      \"usage\": 0.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-21\",\n      \"usage\": 0.083333\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-21\",\n      \"usage\": 0.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-21\",\n      \"usage\": 0.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-21\",\n      \"usage\": 0.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-21\",\n      \"usage\": 0.166666\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-21\",\n      \"usage\": 0.083333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-20\",\n      \"usage\": 9.0\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-20\",\n      \"usage\": 4.5\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-20\",\n      \"usage\": 4.5\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-20\",\n      \"usage\": 8.916667\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-20\",\n      \"usage\": 9.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-20\",\n      \"usage\": 9.0\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-20\",\n      \"usage\": 4.5\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-09-20\",\n      \"usage\": 14.5\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-19\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-19\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-19\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-19\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-19\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-19\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-19\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-09-19\",\n      \"usage\": 38.25\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-18\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-18\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-18\",\n      \"usage\": 0.833333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-18\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-18\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-18\",\n      \"usage\": 24.916666\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-18\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-09-18\",\n      \"usage\": 0.083333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-17\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-17\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-17\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-17\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-17\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-17\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-09-17\",\n      \"usage\": 0.083333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-16\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-16\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-16\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-16\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-16\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-16\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-15\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-15\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-15\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-15\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-15\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-15\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-09-15\",\n      \"usage\": 0.25\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-14\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-14\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-14\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-14\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-14\",\n      \"usage\": 42.25\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-14\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-09-14\",\n      \"usage\": 0.249999\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-13\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-13\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-13\",\n      \"usage\": 1.416667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-13\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-13\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-13\",\n      \"usage\": 33.166667\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-13\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-09-13\",\n      \"usage\": 31.333333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-12\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-12\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-12\",\n      \"usage\": 12.5\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-12\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-12\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-12\",\n      \"usage\": 24.166666\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-12\",\n      \"usage\": 3.25\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-09-12\",\n      \"usage\": 96.333333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-11\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-11\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-11\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-11\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-11\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-11\",\n      \"usage\": 48.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-09-11\",\n      \"usage\": 96.333333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-10\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-10\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-10\",\n      \"usage\": 0.666667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-10\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-10\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-10\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-10\",\n      \"usage\": 0.75\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-09-10\",\n      \"usage\": 96.416666\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-09\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-09\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-09\",\n      \"usage\": 0.416667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-09\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-09\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-09\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-09\",\n      \"usage\": 0.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-09-09\",\n      \"usage\": 85.666667\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-08\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-08\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-08\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-08\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-08\",\n      \"usage\": 48.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"date\": \"2026-09-08\",\n      \"usage\": 0.25\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-07\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-07\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-07\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-07\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-07\",\n      \"usage\": 27.333333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-06\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-06\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-06\",\n      \"usage\": 0.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-06\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-06\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-06\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-05\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-05\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-05\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-05\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-05\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-04\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-04\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-04\",\n      \"usage\": 3.416666\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-04\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-04\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-04\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-03\",\n      \"usage\": 47.333333\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-03\",\n      \"usage\": 22.916667\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-03\",\n      \"usage\": 1.5\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-03\",\n      \"usage\": 44.666667\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-03\",\n      \"usage\": 47.333334\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-03\",\n      \"usage\": 23.666667\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-02\",\n      \"usage\": 47.0\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-02\",\n      \"usage\": 41.166667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-02\",\n      \"usage\": 41.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-02\",\n      \"usage\": 26.333333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-02\",\n      \"usage\": 2.75\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-02\",\n      \"usage\": 20.583333\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-09-01\",\n      \"usage\": 0.333333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-09-01\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-09-01\",\n      \"usage\": 0.166667\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-09-01\",\n      \"usage\": 34.250001\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-09-01\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-09-01\",\n      \"usage\": 27.833333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-09-01\",\n      \"usage\": 19.0\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-09-01\",\n      \"usage\": 5.0\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-08-31\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-08-31\",\n      \"usage\": 3.666667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-31\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-31\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-31\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-08-30\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-30\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-30\",\n      \"usage\": 42.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-30\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-08-29\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-29\",\n      \"usage\": 48.083333\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-29\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-29\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-08-29\",\n      \"usage\": 1.666667\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-08-28\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-08-28\",\n      \"usage\": 1.916667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-28\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-28\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-28\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-08-28\",\n      \"usage\": 4.666667\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-08-27\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-27\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-27\",\n      \"usage\": 31.333333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-27\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-08-26\",\n      \"usage\": 47.833333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-26\",\n      \"usage\": 47.833334\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-26\",\n      \"usage\": 23.916667\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-26\",\n      \"usage\": 23.916667\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-08-25\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-08-25\",\n      \"usage\": 21.833333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-25\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-25\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-25\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-08-24\",\n      \"usage\": 28.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-08-24\",\n      \"usage\": 14.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-24\",\n      \"usage\": 28.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-24\",\n      \"usage\": 14.083333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-24\",\n      \"usage\": 14.083333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-08-22\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-08-22\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-22\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-22\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-22\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-08-21\",\n      \"usage\": 48.166667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-08-21\",\n      \"usage\": 2.25\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-21\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-21\",\n      \"usage\": 39.25\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-21\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-1-2.sdsc.optiputer.net\",\n      \"date\": \"2026-08-20\",\n      \"usage\": 37.5\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-20\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-20\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-20\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-9.sdsc.optiputer.net\",\n      \"date\": \"2026-08-20\",\n      \"usage\": 3.25\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-19\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-19\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-19\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-08-18\",\n      \"usage\": 0.833333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-18\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-18\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-18\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-08-17\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-17\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-17\",\n      \"usage\": 33.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-17\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-08-16\",\n      \"usage\": 23.833333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-16\",\n      \"usage\": 47.666666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-16\",\n      \"usage\": 23.833333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-16\",\n      \"usage\": 23.833333\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-08-15\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-15\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-15\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-15\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-08-14\",\n      \"usage\": 9.666667\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-08-14\",\n      \"usage\": 23.25\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-14\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-14\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-14\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-08-13\",\n      \"usage\": 23.916667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-13\",\n      \"usage\": 47.833334\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-13\",\n      \"usage\": 23.916667\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-13\",\n      \"usage\": 23.916667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-08-12\",\n      \"usage\": 23.916667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-12\",\n      \"usage\": 47.833334\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-12\",\n      \"usage\": 23.916667\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-12\",\n      \"usage\": 23.916667\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-08-11\",\n      \"usage\": 23.833333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-11\",\n      \"usage\": 47.666666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-11\",\n      \"usage\": 23.833333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-11\",\n      \"usage\": 23.833333\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-08-10\",\n      \"usage\": 14.5\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-10\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-10\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-10\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-09\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-09\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-09\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-08-08\",\n      \"usage\": 0.75\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-08\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-08\",\n      \"usage\": 41.833333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-08\",\n      \"usage\": 27.25\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-08-07\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-07\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-07\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-07\",\n      \"usage\": 48.166666\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-08-06\",\n      \"usage\": 8.333333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-06\",\n      \"usage\": 16.666666\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-06\",\n      \"usage\": 16.666666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-06\",\n      \"usage\": 16.666666\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-08-05\",\n      \"usage\": 4.75\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-08-05\",\n      \"usage\": 21.0\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-05\",\n      \"usage\": 42.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-05\",\n      \"usage\": 42.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-05\",\n      \"usage\": 21.0\n    },\n    {\n      \"node\": \"node-2-10.sdsc.optiputer.net\",\n      \"date\": \"2026-08-04\",\n      \"usage\": 22.583333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-04\",\n      \"usage\": 46.5\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-04\",\n      \"usage\": 30.166666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-04\",\n      \"usage\": 23.25\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-03\",\n      \"usage\": 46.75\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-03\",\n      \"usage\": 33.25\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-03\",\n      \"usage\": 24.833333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-02\",\n      \"usage\": 47.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-02\",\n      \"usage\": 23.416666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-02\",\n      \"usage\": 47.0\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-08-01\",\n      \"usage\": 4.5\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-08-01\",\n      \"usage\": 46.833334\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-08-01\",\n      \"usage\": 24.583333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-08-01\",\n      \"usage\": 46.833334\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-07-31\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-07-31\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-07-31\",\n      \"usage\": 27.666667\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-07-31\",\n      \"usage\": 46.5\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-07-30\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-07-30\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-07-30\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-07-30\",\n      \"usage\": 46.5\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-07-29\",\n      \"usage\": 23.916667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-07-29\",\n      \"usage\": 47.833334\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-07-29\",\n      \"usage\": 23.916667\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-07-29\",\n      \"usage\": 23.916667\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-07-28\",\n      \"usage\": 32.166667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-07-28\",\n      \"usage\": 47.333334\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-07-28\",\n      \"usage\": 9.083333\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-07-28\",\n      \"usage\": 23.666667\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-07-27\",\n      \"usage\": 33.333333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-07-27\",\n      \"usage\": 47.5\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-07-27\",\n      \"usage\": 23.75\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-07-26\",\n      \"usage\": 23.916667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-07-26\",\n      \"usage\": 47.833334\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-07-26\",\n      \"usage\": 23.916667\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-07-25\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-07-25\",\n      \"usage\": 47.916667\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-07-25\",\n      \"usage\": 24.0\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-07-24\",\n      \"usage\": 24.083333\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-07-24\",\n      \"usage\": 38.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-07-24\",\n      \"usage\": 31.666666\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-07-24\",\n      \"usage\": 21.416666\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-07-23\",\n      \"usage\": 3.666667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-07-23\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-07-23\",\n      \"usage\": 48.0\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-07-23\",\n      \"usage\": 24.416667\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-07-22\",\n      \"usage\": 15.666667\n    },\n    {\n      \"node\": \"node-2-11.sdsc.optiputer.net\",\n      \"date\": \"2026-07-22\",\n      \"usage\": 0.75\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-07-22\",\n      \"usage\": 47.75\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-07-22\",\n      \"usage\": 47.833334\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-07-22\",\n      \"usage\": 23.916667\n    },\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"date\": \"2026-07-21\",\n      \"usage\": 23.416667\n    },\n    {\n      \"node\": \"node-2-6.sdsc.optiputer.net\",\n      \"date\": \"2026-07-21\",\n      \"usage\": 46.833334\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"date\": \"2026-07-21\",\n      \"usage\": 46.833334\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"date\": \"2026-07-21\",\n      \"usage\": 23.416667\n    }\n  ]\n}"
+  },
+  {
+   "tool": "get_namespace_summary",
+   "args": {
+    "namespace": "hls4ml-nrp",
+    "start_date": "2026-09-19",
+    "end_date": "2026-10-19"
+   },
+   "error": false,
+   "result": "{\n  \"namespace\": \"hls4ml-nrp\",\n  \"start_date\": \"2026-09-19\",\n  \"end_date\": \"2026-10-19\",\n  \"row_count\": 5,\n  \"rows\": [\n    {\n      \"resource\": \"cpu\",\n      \"raw_resource\": \"cpu\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 2354.566661\n    },\n    {\n      \"resource\": \"fpga\",\n      \"raw_resource\": \"amd_com_xilinx_u55c_gen3x16_xdma_base_3_0\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"fpga_hours\",\n      \"usage\": 0.166666\n    },\n    {\n      \"resource\": \"memory\",\n      \"raw_resource\": \"memory\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"memory_gb_hours\",\n      \"usage\": 19873.618991\n    },\n    {\n      \"resource\": \"storage\",\n      \"raw_resource\": \"ephemeral_storage\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"storage_gb_hours\",\n      \"usage\": 1930.050928\n    },\n    {\n      \"resource\": \"wall\",\n      \"raw_resource\": \"kube_pod_status_phase\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"wall_hours\",\n      \"usage\": 325.666661\n    }\n  ]\n}"
+  },
+  {
+   "tool": "get_namespace_daily_trend",
+   "args": {
+    "namespace": "hls4ml-nrp",
+    "resource": "cpu"
+   },
+   "error": false,
+   "result": "{\n  \"namespace\": \"hls4ml-nrp\",\n  \"resource\": \"cpu\",\n  \"start_date\": \"2026-09-19\",\n  \"end_date\": \"2026-10-18\",\n  \"row_count\": 15,\n  \"rows\": [\n    {\n      \"date\": \"2026-09-26\",\n      \"raw_resource\": \"cpu\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 67.333333\n    },\n    {\n      \"date\": \"2026-09-27\",\n      \"raw_resource\": \"cpu\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 25.333334\n    },\n    {\n      \"date\": \"2026-10-04\",\n      \"raw_resource\": \"cpu\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 225.0\n    },\n    {\n      \"date\": \"2026-10-05\",\n      \"raw_resource\": \"cpu\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 16.333334\n    },\n    {\n      \"date\": \"2026-10-06\",\n      \"raw_resource\": \"cpu\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 97.666667\n    },\n    {\n      \"date\": \"2026-10-07\",\n      \"raw_resource\": \"cpu\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 283.666666\n    },\n    {\n      \"date\": \"2026-10-08\",\n      \"raw_resource\": \"cpu\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 41.999999\n    },\n    {\n      \"date\": \"2026-10-09\",\n      \"raw_resource\": \"cpu\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 18.666667\n    },\n    {\n      \"date\": \"2026-10-10\",\n      \"raw_resource\": \"cpu\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 357.333334\n    },\n    {\n      \"date\": \"2026-10-11\",\n      \"raw_resource\": \"cpu\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 250.166666\n    },\n    {\n      \"date\": \"2026-10-12\",\n      \"raw_resource\": \"cpu\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 2.750001\n    },\n    {\n      \"date\": \"2026-10-14\",\n      \"raw_resource\": \"cpu\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 38.666667\n    },\n    {\n      \"date\": \"2026-10-15\",\n      \"raw_resource\": \"cpu\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 59.0\n    },\n    {\n      \"date\": \"2026-10-17\",\n      \"raw_resource\": \"cpu\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 16.666666\n    },\n    {\n      \"date\": \"2026-10-18\",\n      \"raw_resource\": \"cpu\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 853.983327\n    }\n  ]\n}"
+  },
+  {
+   "tool": "get_namespace_daily_trend",
+   "args": {
+    "namespace": "hls4ml-nrp",
+    "resource": "memory"
+   },
+   "error": false,
+   "result": "{\n  \"namespace\": \"hls4ml-nrp\",\n  \"resource\": \"memory\",\n  \"start_date\": \"2026-09-19\",\n  \"end_date\": \"2026-10-18\",\n  \"row_count\": 15,\n  \"rows\": [\n    {\n      \"date\": \"2026-09-26\",\n      \"raw_resource\": \"memory\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"memory_gb_hours\",\n      \"usage\": 558.345749\n    },\n    {\n      \"date\": \"2026-09-27\",\n      \"raw_resource\": \"memory\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"memory_gb_hours\",\n      \"usage\": 200.431807\n    },\n    {\n      \"date\": \"2026-10-04\",\n      \"raw_resource\": \"memory\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"memory_gb_hours\",\n      \"usage\": 1930.945714\n    },\n    {\n      \"date\": \"2026-10-05\",\n      \"raw_resource\": \"memory\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"memory_gb_hours\",\n      \"usage\": 140.302265\n    },\n    {\n      \"date\": \"2026-10-06\",\n      \"raw_resource\": \"memory\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"memory_gb_hours\",\n      \"usage\": 838.950279\n    },\n    {\n      \"date\": \"2026-10-07\",\n      \"raw_resource\": \"memory\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"memory_gb_hours\",\n      \"usage\": 2436.678113\n    },\n    {\n      \"date\": \"2026-10-08\",\n      \"raw_resource\": \"memory\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"memory_gb_hours\",\n      \"usage\": 359.345597\n    },\n    {\n      \"date\": \"2026-10-09\",\n      \"raw_resource\": \"memory\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"memory_gb_hours\",\n      \"usage\": 160.345446\n    },\n    {\n      \"date\": \"2026-10-10\",\n      \"raw_resource\": \"memory\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"memory_gb_hours\",\n      \"usage\": 3069.469961\n    },\n    {\n      \"date\": \"2026-10-11\",\n      \"raw_resource\": \"memory\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"memory_gb_hours\",\n      \"usage\": 2142.11494\n    },\n    {\n      \"date\": \"2026-10-12\",\n      \"raw_resource\": \"memory\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"memory_gb_hours\",\n      \"usage\": 7.337237\n    },\n    {\n      \"date\": \"2026-10-14\",\n      \"raw_resource\": \"memory\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"memory_gb_hours\",\n      \"usage\": 332.144137\n    },\n    {\n      \"date\": \"2026-10-15\",\n      \"raw_resource\": \"memory\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"memory_gb_hours\",\n      \"usage\": 506.806141\n    },\n    {\n      \"date\": \"2026-10-17\",\n      \"raw_resource\": \"memory\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"memory_gb_hours\",\n      \"usage\": 121.69074\n    },\n    {\n      \"date\": \"2026-10-18\",\n      \"raw_resource\": \"memory\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"memory_gb_hours\",\n      \"usage\": 7068.710865\n    }\n  ]\n}"
+  },
+  {
+   "tool": "get_namespace_daily_trend",
+   "args": {
+    "namespace": "hls4ml-nrp",
+    "resource": "fpga"
+   },
+   "error": false,
+   "result": "{\n  \"namespace\": \"hls4ml-nrp\",\n  \"resource\": \"fpga\",\n  \"start_date\": \"2026-09-19\",\n  \"end_date\": \"2026-10-18\",\n  \"row_count\": 2,\n  \"rows\": [\n    {\n      \"date\": \"2026-10-08\",\n      \"raw_resource\": \"amd_com_xilinx_u55c_gen3x16_xdma_base_3_0\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"fpga_hours\",\n      \"usage\": 0.083333\n    },\n    {\n      \"date\": \"2026-10-11\",\n      \"raw_resource\": \"amd_com_xilinx_u55c_gen3x16_xdma_base_3_0\",\n      \"gpu_model_name\": \"not_applicable\",\n      \"unit\": \"fpga_hours\",\n      \"usage\": 0.083333\n    }\n  ]\n}"
+  },
+  {
+   "tool": "top_nodes_for_namespace",
+   "args": {
+    "namespace": "hls4ml-nrp",
+    "resource": "cpu",
+    "start_date": "2026-09-19",
+    "end_date": "2026-10-19"
+   },
+   "error": false,
+   "result": "{\n  \"namespace\": \"hls4ml-nrp\",\n  \"resource\": \"cpu\",\n  \"raw_resource\": [],\n  \"gpu_model_name\": [],\n  \"gpu_model_regex\": null,\n  \"start_date\": \"2026-09-19\",\n  \"end_date\": \"2026-10-19\",\n  \"limit\": 10,\n  \"row_count\": 10,\n  \"rows\": [\n    {\n      \"node\": \"igrok-la.cenic.net\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 440.541664\n    },\n    {\n      \"node\": \"node-2-8.sdsc.optiputer.net\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 327.333334\n    },\n    {\n      \"node\": \"node-2-2.sdsc.optiputer.net\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 288.000001\n    },\n    {\n      \"node\": \"chi-dgx-node02.csuchico.edu\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 271.333332\n    },\n    {\n      \"node\": \"nautilus-it-cpu03.fullerton.edu\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 191.333332\n    },\n    {\n      \"node\": \"k8s-haosu-11.sdsc.optiputer.net\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 132.333334\n    },\n    {\n      \"node\": \"ucm-fiona01.ucmerced.edu\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 122.8\n    },\n    {\n      \"node\": \"node-2-7.sdsc.optiputer.net\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 94.0\n    },\n    {\n      \"node\": \"nautilus-it-cpu11.fullerton.edu\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 84.333334\n    },\n    {\n      \"node\": \"nautilus-it-gpu08.fullerton.edu\",\n      \"unit\": \"cpu_core_hours\",\n      \"usage\": 75.833333\n    }\n  ]\n}"
+  },
+  {
+   "tool": "top_nodes_for_namespace",
+   "args": {
+    "namespace": "hls4ml-nrp",
+    "resource": "fpga",
+    "start_date": "2026-09-19",
+    "end_date": "2026-10-19"
+   },
+   "error": false,
+   "result": "{\n  \"namespace\": \"hls4ml-nrp\",\n  \"resource\": \"fpga\",\n  \"raw_resource\": [],\n  \"gpu_model_name\": [],\n  \"gpu_model_regex\": null,\n  \"start_date\": \"2026-09-19\",\n  \"end_date\": \"2026-10-19\",\n  \"limit\": 10,\n  \"row_count\": 2,\n  \"rows\": [\n    {\n      \"node\": \"k8s-stratix-10-02.sdsc.optiputer.net\",\n      \"unit\": \"fpga_hours\",\n      \"usage\": 0.083333\n    },\n    {\n      \"node\": \"prp-gpu-2.t2.ucsd.edu\",\n      \"unit\": \"fpga_hours\",\n      \"usage\": 0.083333\n    }\n  ]\n}"
+  }
+ ]
+}
