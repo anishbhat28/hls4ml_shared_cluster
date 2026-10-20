@@ -1,0 +1,6 @@
+name,gate,hls_dsp,hls_lut,hls_ff,s1_min,s1_csynth_min,s1_peak_anon_GiB,s1_peak_cg_GiB,s2_attempts,link_min,s2_peak_anon_GiB,s2_peak_cg_GiB,link_cores,s1_node,s2_node,s2_pod_end,s2_cpu,outcome,overlaps,fmax_achieved,wns,disk_GB
+rw-g-big-r2-p16-lat,STOP,3667,265275,139926,23.0,15.6,3.55,4.61,1,87.9,29.46,33.0,3.66,igrok-la.cenic.net,igrok-la.cenic.net,Error,AMD EPYC 7402P 24-Core Processor,place: DSP > SLR,,,,
+rw-g-jet-r2-w8-lat,GO,759,162843,60773,7.2,5.6,2.27,3.92,1,134.3,28.21,29.61,3.62,igrok-la.cenic.net,igrok-la.cenic.net,Completed,AMD EPYC 7402P 24-Core Processor,built,,295.9,-0.046,2.02
+rw-g-jet-r4-p16-lat-c5,GO,1066,172939,62585,7.8,5.8,2.39,3.31,1,579.5,29.06,32.25,3.7,igrok-la.cenic.net,chi-dgx-node02.csuchico.edu,Error,Intel(R) Xeon(R) CPU E5-2698 v4 @ 2.20GHz,route: overlaps,21338,,,
+rw-g-wide-r4-w8-lat,RISK,1039,322403,100863,21.6,19.0,4.91,5.78,1,806.8,28.97,32.79,3.11,chi-dgx-node02.csuchico.edu,nautilus-it-cpu16.fullerton.edu,Error,Intel(R) Xeon(R) Silver 4116 CPU @ 2.10GHz,route: overlaps,13016,,,
+rw-g-wide-r8-p16-res,GO,1321,67814,80358,10.2,7.5,2.09,4.21,2,132.8,29.37,40.0,3.39,nautilus-it-cpu03.fullerton.edu,node-2-10.sdsc.optiputer.net,Completed,AMD EPYC 7F72 24-Core Processor,built,,300.0,0.003,1.61

@@ -1,0 +1,4 @@
+row_0,built,place: DSP > SLR,route: congestion,route: overlaps
+GO,24,0,0,0
+RISK,1,0,3,4
+STOP,0,1,0,0

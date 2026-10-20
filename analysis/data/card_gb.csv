@@ -1,0 +1,6 @@
+design,status,node,load_s,reload_s,kernel_clock_mhz,test_run_s,test_hw_eq_csim_bitexact_frac,test_hw_eq_csim_exact_frac,test_n_mismatch_rows,test_hw_vs_csim_max_abs,test_hw_vs_keras_argmax_agree,hw_accuracy,keras_accuracy,csim_accuracy,inferences_per_s,batch1_s,batch10_s,batch100_s,batch1000_s,batch10000_s,latency_1_us,stress_run_s,stress_hw_eq_csim_bitexact_frac,stress_hw_eq_csim_exact_frac,stress_n_mismatch_rows,stress_hw_vs_csim_max_abs,stress_hw_vs_keras_argmax_agree
+rw-g-big-r2-p16-lat,no_xclbin,prp-gpu-2.t2.ucsd.edu,,,,,,,,,,,,,,,,,,,,,,,,,
+rw-g-jet-r2-w8-lat,ok,prp-gpu-2.t2.ucsd.edu,7.5339,0.1035,295.9,0.00253,1.0,1.0,0,0.0,0.9432,0.75585,0.7671,0.75585,7906126,7.9e-05,7.4e-05,8.5e-05,0.000184,0.001239,79.0,0.000384,1.0,1.0,0,0.0,0.5505747126436782
+rw-g-jet-r4-p16-lat-c5,no_xclbin,prp-gpu-2.t2.ucsd.edu,,,,,,,,,,,,,,,,,,,,,,,,,
+rw-g-wide-r4-w8-lat,no_xclbin,prp-gpu-2.t2.ucsd.edu,,,,,,,,,,,,,,,,,,,,,,,,,
+rw-g-wide-r8-p16-res,ok,prp-gpu-2.t2.ucsd.edu,7.6371,0.1047,300.0,0.004134,1.0,1.0,0,0.0,0.98755,0.76835,0.76955,0.76835,4837612,9.3e-05,8.6e-05,0.000103,0.000275,0.002063,93.0,0.000613,1.0,1.0,0,0.0,0.5314176245210728
