@@ -1,0 +1,88 @@
+{
+ "apiVersion": "batch/v1",
+ "kind": "Job",
+ "metadata": {
+  "name": "rw-card-gb",
+  "namespace": "hls4ml-nrp"
+ },
+ "spec": {
+  "backoffLimit": 0,
+  "template": {
+   "spec": {
+    "containers": [
+     {
+      "args": [
+       "set -o pipefail\necho \"card job $TAG start $(date) node=$NODE_NAME\"\nsource /opt/xilinx/xrt/setup.sh\ncat > /tmp/one.py <<'PY'\nimport os, sys, glob, json, time, csv, subprocess\nimport numpy as np, pyxrt\n\nTAG = os.environ['TAG']\ndata = {t: np.ascontiguousarray(np.load(f'/work/rw/data/X_{t}.npy'), dtype=np.float32) for t in ['test', 'stress']}\nY = np.load('/work/rw/data/Y_test.npy')\ndev = pyxrt.device(0)\nTO, FROM = pyxrt.xclBOSyncDirection.XCL_BO_SYNC_BO_TO_DEVICE, pyxrt.xclBOSyncDirection.XCL_BO_SYNC_BO_FROM_DEVICE\n\ndef run(k, X):\n    N = len(X)\n    bi = pyxrt.bo(dev, X.nbytes, pyxrt.bo.normal, k.group_id(0))\n    bo = pyxrt.bo(dev, N * 5 * 4, pyxrt.bo.normal, k.group_id(1))\n    bi.write(X.tobytes(), 0); bi.sync(TO)\n    t = time.perf_counter(); r = k(bi, bo, np.uint32(N)); r.wait(); dt = time.perf_counter() - t\n    bo.sync(FROM)\n    return np.frombuffer(bo.read(N * 5 * 4, 0), dtype=np.float32).reshape(N, 5), dt\n\nrows = []\nrows = []\nd = sys.argv[1]\nname = os.path.basename(d.rstrip('/'))\nxcl = d + 'myproject.xclbin'\nif not os.path.exists(xcl):\n    rows.append({'design': name, 'status': 'no_xclbin', 'node': os.environ['NODE_NAME']})\n    print('ROW ' + json.dumps(rows[-1]), flush=True)\n    sys.exit(0)\ntry:\n    meta = json.load(open(d + 'meta.json'))\n    t = time.perf_counter(); uuid = dev.load_xclbin(pyxrt.xclbin(xcl)); load_s = time.perf_counter() - t\n    t = time.perf_counter(); uuid = dev.load_xclbin(pyxrt.xclbin(xcl)); reload_s = time.perf_counter() - t\n    k = pyxrt.kernel(dev, uuid, meta['kernel'])\n    # achieved kernel clock as recorded in the xclbin by the linker (what XRT programs on the card)\n    info = open(d + 'xclbin_info.txt').read() if os.path.exists(d + 'xclbin_info.txt') else ''\n    import re\n    m = re.search(r'Achieved Freq:\\s*([\\d.]+)', info)\n    clk = float(m.group(1)) if m else ''\n    try:\n        rep = subprocess.run(['xbutil', 'examine', '-d', 'all', '--report', 'dynamic-regions'],\n                             capture_output=True, text=True, timeout=60)\n        open(f'/work/rw/card_xbutil_{TAG}_{name}.txt', 'w').write(rep.stdout + rep.stderr)\n    except Exception as e:\n        open(f'/work/rw/card_xbutil_{TAG}_{name}.txt', 'w').write(f'xbutil failed: {e}')\n    row = {'design': name, 'status': 'ok', 'node': os.environ['NODE_NAME'],\n           'load_s': round(load_s, 4), 'reload_s': round(reload_s, 4), 'kernel_clock_mhz': clk}\n    for tag, X in data.items():\n        hw, dt = run(k, X)\n        cs = np.load(f'{d}y_csim_{tag}.npy').reshape(len(X), 5)\n        kr = np.load(f'{d}y_keras_{tag}.npy').reshape(len(X), 5)\n        row[f'{tag}_run_s'] = round(dt, 6)\n        # bit-exact: identical float32 bit patterns (also catches NaN payload / signed-zero differences)\n        row[f'{tag}_hw_eq_csim_bitexact_frac'] = float((hw.view(np.uint32) == cs.view(np.uint32)).all(1).mean())\n        # value-exact: equal values, NaN==NaN\n        eq = np.isclose(hw, cs, rtol=0, atol=0, equal_nan=True).all(1)\n        row[f'{tag}_hw_eq_csim_exact_frac'] = float(eq.mean())\n        row[f'{tag}_n_mismatch_rows'] = int((~eq).sum())\n        diff = hw - cs; finite = np.isfinite(diff)\n        row[f'{tag}_hw_vs_csim_max_abs'] = float(np.abs(diff[finite]).max()) if finite.any() else float('nan')\n        row[f'{tag}_hw_vs_keras_argmax_agree'] = float((hw.argmax(1) == kr.argmax(1)).mean())\n        if tag == 'test':\n            row['hw_accuracy'] = float((hw.argmax(1) == Y.argmax(1)).mean())\n            row['keras_accuracy'] = float((kr.argmax(1) == Y.argmax(1)).mean())\n            row['csim_accuracy'] = float((cs.argmax(1) == Y.argmax(1)).mean())\n            row['inferences_per_s'] = round(len(X) / dt)\n            # batch-size sweep: launch/DMA overhead vs steady-state throughput (median of 5 runs each)\n            for n in [1, 10, 100, 1000, 10000]:\n                ts = sorted(run(k, X[:n])[1] for _ in range(5))\n                row[f'batch{n}_s'] = round(ts[2], 6)\n            row['latency_1_us'] = round(row['batch1_s'] * 1e6, 1)\nexcept Exception as ex:\n    row = {'design': name, 'status': f'error: {ex}', 'node': os.environ['NODE_NAME']}\nrows.append(row)\nprint(row, flush=True)\nprint('ROW ' + json.dumps(rows[-1], default=str), flush=True)\nPY\ncat > /tmp/merge.py <<'PY'\nimport csv, json, os, sys\nTAG = os.environ['TAG']\nrows = [json.loads(l[4:]) for l in open('/tmp/rows.txt') if l.startswith('ROW ')]\nkeys = []\nfor r in rows:\n    for k in r:\n        if k not in keys: keys.append(k)\nout = f'/work/rw/card_results_{TAG}.csv'\nwith open(out, 'w', newline='') as f:\n    w = csv.DictWriter(f, fieldnames=keys); w.writeheader(); w.writerows(rows)\nprint('wrote', out, len(rows), 'designs')\nPY\n: > /tmp/rows.txt\n# one fresh process per design, so each releases the card before the next xclbin is loaded\nfor d in /work/rw/builds/rw-g-*/; do\n  python3 /tmp/one.py \"$d\" 2>&1 | tee -a /tmp/rows.txt | grep -E \"^ROW|Error|error\" || true\ndone\npython3 /tmp/merge.py\necho \"card job $TAG end $(date)\"\n"
+      ],
+      "command": [
+       "/bin/bash",
+       "-c"
+      ],
+      "env": [
+       {
+        "name": "TAG",
+        "value": "gb"
+       },
+       {
+        "name": "NODE_NAME",
+        "valueFrom": {
+         "fieldRef": {
+          "fieldPath": "spec.nodeName"
+         }
+        }
+       }
+      ],
+      "image": "gitlab-registry.nrp-nautilus.io/nrp/coder-images/vivado-vitis",
+      "name": "card",
+      "resources": {
+       "limits": {
+        "amd.com/xilinx_u55c_gen3x16_xdma_base_3-0": 1,
+        "cpu": "4",
+        "memory": "16Gi"
+       },
+       "requests": {
+        "amd.com/xilinx_u55c_gen3x16_xdma_base_3-0": 1,
+        "cpu": "4",
+        "memory": "16Gi"
+       }
+      },
+      "volumeMounts": [
+       {
+        "mountPath": "/work",
+        "name": "work"
+       }
+      ]
+     }
+    ],
+    "restartPolicy": "Never",
+    "volumes": [
+     {
+      "name": "work",
+      "persistentVolumeClaim": {
+       "claimName": "hls4ml-work"
+      }
+     }
+    ],
+    "affinity": {
+     "nodeAffinity": {
+      "requiredDuringSchedulingIgnoredDuringExecution": {
+       "nodeSelectorTerms": [
+        {
+         "matchExpressions": [
+          {
+           "key": "kubernetes.io/hostname",
+           "operator": "NotIn",
+           "values": [
+            "k8s-stratix-10-02.sdsc.optiputer.net"
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     }
+    }
+   }
+  }
+ }
+}
