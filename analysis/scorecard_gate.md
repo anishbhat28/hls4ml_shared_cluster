@@ -8,7 +8,7 @@
 | jet-r2-w8-lat | 759 / 163k / 61k | GO | 7.2, 4.1 | built, 295.9 MHz (WNS −0.046) | 2.24 h |
 | jet-r4-p16-lat-c5 (CLK 5.0 ns) | 1066 / 173k / 63k | GO | 7.8, 3.5 | routing fail (VPL 35-2, 21,338 overlaps) | 9.66 h |
 | wide-r4-w8-lat | 1039 / 322k / 101k | RISK | 21.6, 6.0 | routing fail (VPL 35-2, 13,016 overlaps) | 13.45 h |
-| wide-r8-p16-res | 1321 / 68k / 80k | GO | 10.2, 4.2 | built, 300.0 MHz (WNS 0.003); first pod lost after 7.08 h, rerun | 2.21 h |
+| wide-r8-p16-res | 1321 / 68k / 80k | GO | 10.2, 4.2 | built, 300.0 MHz (WNS 0.003); first pod lost (ucm-fiona01), rerun on node-2-10 started 7.08 h after the first link began | 2.21 h |
 
 | id | verdict | evidence |
 |---|---|---|
@@ -24,4 +24,5 @@
 Notes
 - First 8-bit-weight design to fail routing: wide (16→128→64→5) Latency RF=4 w8. Failing nets are LUT multipliers (mul_16s_5ns/6ns) in the 128→64 layer; csynth LUT 322k. The earlier "w8 or Resource builds" finding holds for jet/big only.
 - Routing-failure cost in this round: 9.66 h (gate miss) + 13.45 h (RISK, run on purpose to test the verdict) at 40 Gi.
-- Lost pod: wide-r8-res first stage-2 attempt, 7.08 h of link lost (third lost pod of the run week).
+- Lost pod: wide-r8-res first stage-2 attempt (third lost pod of the run week). NRP accounting charged it 0.92 h (8 CPU, 40 Gi), so the pod stopped being accounted ~55 min into link; the rerun started 7.08 h after the first link began. The 7.08 h is turnaround lost, not resources charged. The first attempt's mem_link.csv was overwritten by the rerun, so its actual run time is known only from accounting.
+- NRP accounting (queried 2026-10-20, data through 2026-10-19): all 10 gate pods present, on the nodes in our pod records; charges = requested CPU/memory × wall (40 Gi stage-2 pods: 42.95 GB per wall-hour). Card sessions ga/gb (Oct 20 UTC) not yet ingested.
