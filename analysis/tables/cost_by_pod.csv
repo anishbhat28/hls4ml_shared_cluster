@@ -1,0 +1,50 @@
+job,pod,node,phase,category,wall_h,cpu_core_h,mem_GB_h,fpga_h
+rw-big-r1-p8-lat,rw-big-r1-p8-lat-9snlb,chi-dgx-node02.csuchico.edu,run week,built,3.166667,24.666666,211.885053,0.0
+rw-big-r1-w8-lat,rw-big-r1-w8-lat-tdb86,igrok-la.cenic.net,run week,built,3.0,24.0,206.15843,0.0
+rw-big-r4-p16-lat,rw-big-r4-p16-lat-wsxjw,chi-dgx-node02.csuchico.edu,run week,routing failed,4.916667,39.333333,337.870761,0.0
+rw-big-r4-p16-res,rw-big-r4-p16-res-tksvx,igrok-la.cenic.net,run week,built,3.0,24.0,206.15843,0.0
+rw-big-r4-w8-lat,rw-big-r4-w8-lat-56jm6,chi-dgx-node02.csuchico.edu,run week,built,4.166667,33.333333,286.331153,0.0
+rw-big-r4-w8-res,rw-big-r4-w8-res-j4xcr,ucm-fiona01.ucmerced.edu,run week,built,4.416667,35.333333,303.511022,0.0
+rw-card-a,rw-card-a-tsfpq,k8s-stratix-10-02.sdsc.optiputer.net,card,card validation,0.083333,0.333333,1.431656,0.083333
+rw-card-b,rw-card-b-6tr7p,prp-gpu-2.t2.ucsd.edu,card,card validation,0.083333,0.333333,1.431656,0.083333
+rw-cnn-r1-p16-lat,rw-cnn-r1-p16-lat-sgjdj,nautilus-it-gpu08.fullerton.edu,run week,built,1.166667,9.333333,80.172723,0.0
+rw-cnn-r1-w8-lat,rw-cnn-r1-w8-lat-stjpg,igrok-la.cenic.net,run week,built,1.916667,15.333333,131.71233,0.0
+rw-cnn-r4-p16-lat,rw-cnn-r4-p16-lat-qxt5v,igrok-la.cenic.net,run week,built,2.0,16.0,137.438953,0.0
+rw-cnn-r4-w8-lat,rw-cnn-r4-w8-lat-5s9w4,exp-19-11.sdsc.optiputer.net,run week,built,1.5,12.0,103.079215,0.0
+rw-cnn-r8-p16-lat,rw-cnn-r8-p16-lat-8c54p,node-2-8.sdsc.optiputer.net,run week,built,2.0,16.0,137.438953,0.0
+rw-g-big-r2-p16-lat-s1,rw-g-big-r2-p16-lat-s1-mmjrx,igrok-la.cenic.net,gate round,gate stage 1,0.416667,0.833333,3.579139,0.0
+rw-g-big-r2-p16-lat-s2,rw-g-big-r2-p16-lat-s2-fztk4,igrok-la.cenic.net,gate round,placement failed,1.5,12.0,64.424509,0.0
+rw-g-jet-r2-w8-lat-s1,rw-g-jet-r2-w8-lat-s1-kcm7c,igrok-la.cenic.net,gate round,gate stage 1,0.166667,0.333333,1.431656,0.0
+rw-g-jet-r2-w8-lat-s2,rw-g-jet-r2-w8-lat-s2-gdxsd,igrok-la.cenic.net,gate round,built,2.25,18.0,96.636764,0.0
+rw-g-jet-r4-p16-lat-c5-s1,rw-g-jet-r4-p16-lat-c5-s1-2m9lf,igrok-la.cenic.net,gate round,gate stage 1,0.166667,0.333333,1.431656,0.0
+rw-g-jet-r4-p16-lat-c5-s2,rw-g-jet-r4-p16-lat-c5-s2-vx2t6,chi-dgx-node02.csuchico.edu,gate round,routing failed,9.666667,77.333333,415.180172,0.0
+rw-g-wide-r4-w8-lat-s1,rw-g-wide-r4-w8-lat-s1-psg4f,chi-dgx-node02.csuchico.edu,gate round,gate stage 1,0.416667,0.833333,3.579139,0.0
+rw-g-wide-r4-w8-lat-s2,rw-g-wide-r4-w8-lat-s2-f9v24,nautilus-it-cpu16.fullerton.edu,gate round,routing failed,13.416667,107.333333,576.241446,0.0
+rw-g-wide-r8-p16-res-s1,rw-g-wide-r8-p16-res-s1-4n8bh,nautilus-it-cpu03.fullerton.edu,gate round,gate stage 1,0.166667,0.333333,1.431656,0.0
+rw-g-wide-r8-p16-res-s2,rw-g-wide-r8-p16-res-s2-z2vz6,ucm-fiona01.ucmerced.edu,gate round,lost pod,0.916667,7.333333,39.370534,0.0
+rw-g-wide-r8-p16-res-s2,rw-g-wide-r8-p16-res-s2-j94xl,node-2-10.sdsc.optiputer.net,gate round,built,2.25,18.0,96.636764,0.0
+rw-ho-big-r2-w8-lat,rw-ho-big-r2-w8-lat-ngm8m,nautilus-it-gpu08.fullerton.edu,run week,built,1.416667,11.333333,60.84537,0.0
+rw-ho-cnn-r2-p16-lat,rw-ho-cnn-r2-p16-lat-9jpzw,nautilus-it-cpu03.fullerton.edu,run week,built,3.0,24.0,128.849019,0.0
+rw-ho-jet-r2-p16-lat,rw-ho-jet-r2-p16-lat-5x6qc,igrok-la.cenic.net,run week,built,3.25,26.0,139.586437,0.0
+rw-ho-wide-r4-p16-lat,rw-ho-wide-r4-p16-lat-ttx6n,nautilus-it-cpu03.fullerton.edu,run week,routing failed,8.0,64.0,343.597383,0.0
+rw-jet-r1-p16-lat,rw-jet-r1-p16-lat-mnljn,node-2-8.sdsc.optiputer.net,run week,placement failed,1.333333,10.666667,91.625969,0.0
+rw-jet-r1-p8-lat,rw-jet-r1-p8-lat-spk2x,chi-dgx-node02.csuchico.edu,run week,stopped (superseded),2.083333,16.666667,143.165577,0.0
+rw-jet-r1-w8-lat,rw-jet-r1-w8-lat-kl74c,chi-dgx-node02.csuchico.edu,run week,built,3.416667,27.333333,234.791546,0.0
+rw-jet-r4-p16-lat,rw-jet-r4-p16-lat-7ppd8,node-2-9.sdsc.optiputer.net,run week,routing failed,7.416667,59.333333,509.669452,0.0
+rw-jet-r4-p16-res,rw-jet-r4-p16-res-6zcxl,nautilus-it-gpu08.fullerton.edu,run week,built,1.166667,9.333333,80.172723,0.0
+rw-jet-r4-p8-lat,rw-jet-r4-p8-lat-rl6jk,nautilus-it-gpu08.fullerton.edu,run week,built,1.083333,8.0,68.719477,0.0
+rw-jet-r4-p8-res,rw-jet-r4-p8-res-44zqt,nautilus-it-gpu08.fullerton.edu,run week,built,1.166667,9.333333,80.172723,0.0
+rw-jet-r4-w8-lat,rw-jet-r4-w8-lat-nlzz2,ucm-fiona01.ucmerced.edu,run week,lost pod,1.083333,8.666667,74.4461,0.0
+rw-jet-r4-w8-lat,rw-jet-r4-w8-lat-xg6w5,chi-dgx-node02.csuchico.edu,run week,built,3.5,28.0,240.518169,0.0
+rw-jet-r4-w8-res,rw-jet-r4-w8-res-p8xk9,igrok-la.cenic.net,run week,built,2.083333,16.666667,143.165577,0.0
+rw-jet-r8-p16-lat,rw-jet-r8-p16-lat-xffm7,node-2-8.sdsc.optiputer.net,run week,routing failed,5.75,46.0,395.136991,0.0
+rw-noslr-big-r4-p16-lat,rw-noslr-big-r4-p16-lat-6vk48,nautilus-it-cpu03.fullerton.edu,run week,routing failed,12.416667,99.333333,853.266836,0.0
+rw-noslr-cnn-r1-p16-lat,rw-noslr-cnn-r1-p16-lat-ww9p6,chi-dgx-node02.csuchico.edu,run week,built,2.583333,20.666667,177.525315,0.0
+rw-noslr-jet-r1-p16-lat,rw-noslr-jet-r1-p16-lat-lrb4k,nautilus-it-cpu03.fullerton.edu,run week,built,4.666667,37.333333,320.690891,0.0
+rw-noslr-jet-r4-p16-lat,rw-noslr-jet-r4-p16-lat-xtn87,ucm-fiona01.ucmerced.edu,run week,routing failed,10.083333,80.666667,692.92139,0.0
+rw-noslr-jet-r4-w8-lat,rw-noslr-jet-r4-w8-lat-rg8dz,igrok-la.cenic.net,run week,built,2.25,18.0,154.618823,0.0
+rw-rep-big-r4-p16-lat,rw-rep-big-r4-p16-lat-n2tfx,nautilus-it-gpu08.fullerton.edu,run week,routing failed,1.75,14.0,120.259084,0.0
+rw-rep-jet-r4-p16-res,rw-rep-jet-r4-p16-res-t2q5l,igrok-la.cenic.net,run week,built,2.166667,17.333333,148.8922,0.0
+rw-rep2-jet-r4-p16-res,rw-rep2-jet-r4-p16-res-pscdq,igrok-la.cenic.net,run week,built,2.166667,17.333333,148.8922,0.0
+rw-tiny-r1-p16-lat,rw-tiny-r1-p16-lat-xf584,chi-dgx-node02.csuchico.edu,run week,built,2.5,20.0,171.798692,0.0
+rw-under-jet-r4-p16-res,rw-under-jet-r4-p16-res-vs7w4,igrok-la.cenic.net,run week,OOM-killed,0.166667,1.333333,2.863312,0.0
