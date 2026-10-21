@@ -1,0 +1,144 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rw2-prep
+  namespace: hls4ml-nrp
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: prep
+        image: gitlab-registry.nrp-nautilus.io/nrp/coder-images/vivado-vitis
+        command: ["/bin/bash","-c"]
+        args:
+        - |
+          set -eo pipefail
+          echo "=== free space on /work (need ~200 GB free; each build deletes its temp files at the end) ==="
+          df -h /work
+          mkdir -p /work/rw2/data /work/rw2/models /work/rw2/builds
+
+          echo "=== pin hls4ml main (includes the Alveo support merged in #1573) ==="
+          if [ ! -d /work/rw2/hls4ml ]; then git clone https://github.com/fastmachinelearning/hls4ml /work/rw2/hls4ml; fi
+          git -C /work/rw2/hls4ml fetch -q origin
+          git -C /work/rw2/hls4ml checkout -q 8912ed2
+          git -C /work/rw2/hls4ml log -1 --format='%H %cd %s' | tee /work/rw2/HLS4ML_COMMIT
+          # build the hls4ml wheel once; build jobs install it (parallel installs from the source tree would collide)
+          rm -rf /work/rw2/wheels && pip wheel -q --no-deps -w /work/rw2/wheels /work/rw2/hls4ml && ls /work/rw2/wheels
+
+          python3 -m venv --system-site-packages /tmp/venv
+          source /tmp/venv/bin/activate
+          pip install -q scikit-learn
+
+          echo "=== dataset download (checksum-verified, retried) ==="
+          ARFF=/work/rw2/data/hls4ml_lhc_jets_hlf.arff
+          WANT=b0cade1d843feb6199c746918453c378
+          for i in 1 2 3 4 5 6 7 8; do
+            [ -f $ARFF ] && [ "$(md5sum $ARFF | cut -d' ' -f1)" = "$WANT" ] && break
+            echo "download attempt $i"
+            rm -f $ARFF.part
+            URL=https://openml.org/data/v1/download/21854360/hls4ml_lhc_jets_hlf.arff
+            if command -v curl >/dev/null; then
+              curl -sSL --retry 5 --retry-delay 10 --connect-timeout 30 -o $ARFF.part $URL || true
+            else
+              python3 -c "import urllib.request,sys; urllib.request.urlretrieve(sys.argv[1], sys.argv[2])" $URL $ARFF.part || true
+            fi
+            got=$(md5sum $ARFF.part 2>/dev/null | cut -d' ' -f1) || got=none
+            echo "  size $(stat -c %s $ARFF.part 2>/dev/null) bytes, md5 $got"
+            [ "$got" = "$WANT" ] && mv $ARFF.part $ARFF && break
+            sleep 30
+          done
+          [ "$(md5sum $ARFF | cut -d' ' -f1)" = "$WANT" ] || { echo "DATASET CHECKSUM FAILED"; exit 1; }
+          echo "dataset ok (md5 $WANT)"
+
+          echo "=== dataset + training ==="
+          python3 - <<'PY'
+          import numpy as np, keras
+          from sklearn.preprocessing import StandardScaler, LabelEncoder
+          from sklearn.model_selection import train_test_split
+
+          keras.utils.set_random_seed(42)
+          import pandas as pd
+          path = '/work/rw2/data/hls4ml_lhc_jets_hlf.arff'
+          names, skip = [], 0
+          with open(path) as f:
+              for skip, line in enumerate(f, 1):
+                  s = line.strip()
+                  if s.lower().startswith('@attribute'):
+                      names.append(s.split()[1].strip("'\""))
+                  if s.lower().startswith('@data'):
+                      break
+          df = pd.read_csv(path, skiprows=skip, header=None, names=names, comment='%', skip_blank_lines=True)
+          X = df.drop(columns=[names[-1]]).to_numpy(dtype='float32')
+          y = df[names[-1]].astype(str).str.strip("'\"").to_numpy()
+          print('dataset', X.shape, sorted(set(y)))
+          Y = keras.utils.to_categorical(LabelEncoder().fit_transform(y), 5)
+          Xtr, Xte, Ytr, Yte = train_test_split(X, Y, test_size=0.2, random_state=42)
+          sc = StandardScaler().fit(Xtr)
+          Xtr = sc.transform(Xtr).astype('float32')
+          Xte = sc.transform(Xte).astype('float32')
+          np.save('/work/rw2/data/X_test.npy', Xte[:20000])
+          np.save('/work/rw2/data/Y_test.npy', Yte[:20000])
+
+          # stress inputs: out-of-range (forces overflow/saturation), zeros, tiny values, wide uniform
+          rng = np.random.default_rng(7)
+          base = Xte[:500]
+          nanblock = base[:60].copy()
+          nanblock[:20] = np.inf; nanblock[20:40] = -np.inf; nanblock[40:, 0] = np.nan  # conversion edge cases
+          stress = np.concatenate([base * 4, base * 16, -base * 16,
+                                   np.zeros((50, 16)), base[:500] * 1e-3,
+                                   rng.uniform(-50, 50, (500, 16)), nanblock]).astype('float32')
+          np.save('/work/rw2/data/X_stress.npy', stress)
+          print('stress set', stress.shape)
+
+          L = keras.layers
+          models = {
+              'jet': [keras.Input((16,)), L.Dense(64, activation='relu'), L.Dense(32, activation='relu'),
+                      L.Dense(32, activation='relu'), L.Dense(5, activation='softmax')],
+              'big': [keras.Input((16,)), L.Dense(64, activation='relu'), L.Dense(64, activation='relu'),
+                      L.Dense(32, activation='relu'), L.Dense(5, activation='softmax')],
+              # kernel size 4 so that ReuseFactor 1, 2, 4, 8 are all valid in every layer (hls4ml rounds invalid RFs)
+              'cnn': [keras.Input((16, 1)), L.Conv1D(8, 4, activation='relu'), L.MaxPooling1D(2),
+                      L.Conv1D(8, 4, activation='relu'), L.Flatten(), L.Dense(5, activation='softmax')],
+              # floor of the build cost: smallest sensible model
+              'tiny': [keras.Input((16,)), L.Dense(8, activation='relu'), L.Dense(5, activation='softmax')],
+              # held-out architecture, not used when deriving the sizing guidance
+              'wide': [keras.Input((16,)), L.Dense(128, activation='relu'), L.Dense(64, activation='relu'),
+                       L.Dense(5, activation='softmax')],
+          }
+          for name, layers in models.items():
+              m = keras.Sequential(layers)
+              m.compile('adam', 'categorical_crossentropy', metrics=['accuracy'])
+              xtr = Xtr.reshape(-1, 16, 1) if name == 'cnn' else Xtr
+              xte = Xte.reshape(-1, 16, 1) if name == 'cnn' else Xte
+              m.fit(xtr, Ytr, batch_size=1024, epochs=10, validation_split=0.1, verbose=2)
+              print(name, 'test accuracy', m.evaluate(xte, Yte, verbose=0)[1])
+              m.save(f'/work/rw2/models/{name}.h5')
+          PY
+          ls -l /work/rw2/data /work/rw2/models
+          echo "=== clean-room check: compare with the run-week data and models (read-only) ==="
+          python3 - <<'PY'
+          import json, numpy as np, keras
+          r = {}
+          for f in ['X_test', 'Y_test', 'X_stress']:
+              a, b = np.load(f'/work/rw2/data/{f}.npy'), np.load(f'/work/rw/data/{f}.npy')
+              r[f] = bool(a.shape == b.shape and (a.view(np.uint32) == b.view(np.uint32)).all()) if a.dtype == np.float32 else bool(np.array_equal(a, b))
+          for m in ['jet', 'big', 'cnn', 'tiny', 'wide']:
+              wa = keras.models.load_model(f'/work/rw2/models/{m}.h5', compile=False).get_weights()
+              wb = keras.models.load_model(f'/work/rw/models/{m}.h5', compile=False).get_weights()
+              r[f'model_{m}_identical'] = all(np.array_equal(x, y) for x, y in zip(wa, wb))
+              r[f'model_{m}_max_abs_diff'] = float(max(np.abs(x - y).max() for x, y in zip(wa, wb)))
+          json.dump(r, open('/work/rw2/cleanroom_vs_rw.json', 'w'), indent=1)
+          print(json.dumps(r, indent=1))
+          PY
+          lscpu | grep 'Model name' | tee /work/rw2/PREP_CPU
+          echo "=== prep done ==="
+        resources:
+          requests: {cpu: "8", memory: 16Gi}
+          limits:   {cpu: "8", memory: 16Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+      volumes:
+      - name: work
+        persistentVolumeClaim: {claimName: hls4ml-work}
