@@ -1,0 +1,70 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: rw-prep-large
+  namespace: hls4ml-nrp
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: prep
+        image: gitlab-registry.nrp-nautilus.io/nrp/coder-images/vivado-vitis
+        command: ["/bin/bash","-c"]
+        args:
+        - |
+          set -eo pipefail
+          echo "=== free space on /work (need ~200 GB free; each build deletes its temp files at the end) ==="
+          df -h /work
+          mkdir -p /work/rw/data /work/rw/models /work/rw/builds
+
+          python3 -m venv --system-site-packages /tmp/venv
+          source /tmp/venv/bin/activate
+          pip install -q scikit-learn
+
+          ARFF=/work/rw/data/hls4ml_lhc_jets_hlf.arff
+          [ "$(md5sum $ARFF | cut -d' ' -f1)" = "b0cade1d843feb6199c746918453c378" ] || { echo "DATASET MISSING OR CHANGED"; exit 1; }
+          [ -f /work/rw/models/large.h5 ] && { echo "large.h5 already exists - not overwriting"; exit 1; }
+          echo "=== train the large model (same split and seed as the run week) ==="
+          python3 - <<'PY'
+          import numpy as np, keras, pandas as pd
+          from sklearn.preprocessing import StandardScaler, LabelEncoder
+          from sklearn.model_selection import train_test_split
+          keras.utils.set_random_seed(42)
+          path = '/work/rw/data/hls4ml_lhc_jets_hlf.arff'
+          names, skip = [], 0
+          with open(path) as f:
+              for skip, line in enumerate(f, 1):
+                  s = line.strip()
+                  if s.lower().startswith('@attribute'):
+                      names.append(s.split()[1].strip("'\""))
+                  if s.lower().startswith('@data'):
+                      break
+          df = pd.read_csv(path, skiprows=skip, header=None, names=names, comment='%', skip_blank_lines=True)
+          X = df.drop(columns=[names[-1]]).to_numpy(dtype='float32')
+          y = df[names[-1]].astype(str).str.strip("'\"").to_numpy()
+          Y = keras.utils.to_categorical(LabelEncoder().fit_transform(y), 5)
+          Xtr, Xte, Ytr, Yte = train_test_split(X, Y, test_size=0.2, random_state=42)
+          sc = StandardScaler().fit(Xtr)
+          Xtr = sc.transform(Xtr).astype('float32'); Xte = sc.transform(Xte).astype('float32')
+          assert np.array_equal(Xte[:20000], np.load('/work/rw/data/X_test.npy')), 'test split differs from the run week'
+          L = keras.layers
+          m = keras.Sequential([keras.Input((16,)), L.Dense(256, activation='relu'), L.Dense(256, activation='relu'),
+                                L.Dense(128, activation='relu'), L.Dense(5, activation='softmax')])
+          m.compile('adam', 'categorical_crossentropy', metrics=['accuracy'])
+          m.fit(Xtr, Ytr, batch_size=1024, epochs=10, validation_split=0.1, verbose=2)
+          print('large params', m.count_params(), 'test accuracy', m.evaluate(Xte, Yte, verbose=0)[1])
+          print('max |w|', max(float(np.abs(w).max()) for w in m.get_weights()))
+          m.save('/work/rw/models/large.h5')
+          PY
+          ls -l /work/rw/models
+          echo "=== prep-large done ==="
+        resources:
+          requests: {cpu: "8", memory: 16Gi}
+          limits:   {cpu: "8", memory: 16Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+      volumes:
+      - name: work
+        persistentVolumeClaim: {claimName: hls4ml-work}
