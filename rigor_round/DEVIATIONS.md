@@ -1,0 +1,1 @@
+- t2 launched with kubectl apply directly: launch.sh read only the first Job condition (SuccessCriteriaMet on this Kubernetes version); check fixed after.

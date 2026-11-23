@@ -18,8 +18,8 @@ case "$1" in
     # the four-way and the pair must start together: apply them back to back
     for f in jobs/rg-q*.yaml jobs/rg-p*.yaml jobs/rg-t1-*.yaml jobs/rg-r*.yaml; do kubectl apply -f $f; done ;;
   t2)
-    s=$(kubectl -n $NS get job rg-t1-big-r4-w8-res -o jsonpath='{.status.conditions[0].type}' 2>/dev/null)
-    [ "$s" = "Complete" ] || [ "$s" = "Failed" ] || { echo "rg-t1 has not finished yet (status: ${s:-running}); wait."; exit 1; }
+    s=$(kubectl -n $NS get job rg-t1-big-r4-w8-res -o jsonpath='{.status.conditions[?(@.status=="True")].type}' 2>/dev/null)
+    [[ "$s" == *Complete* || "$s" == *Failed* ]] || { echo "rg-t1 has not finished yet (status: ${s:-running}); wait."; exit 1; }
     snap nautilus-it-cpu03.fullerton.edu
     kubectl apply -f jobs/rg-t2-noslr-jet-r1-p16-lat.yaml ;;
   card)
