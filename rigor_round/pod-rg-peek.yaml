@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rg-peek
+  namespace: hls4ml-nrp
+spec:
+  securityContext: {runAsUser: 1000, runAsGroup: 1000}
+  containers:
+  - name: c
+    image: python:3.12-slim
+    command: ["sleep", "7200"]
+    resources: {requests: {cpu: "1", memory: 2Gi}, limits: {cpu: "1", memory: 2Gi}}
+    volumeMounts: [{name: work, mountPath: /work}]
+  volumes:
+  - name: work
+    persistentVolumeClaim: {claimName: hls4ml-work}
