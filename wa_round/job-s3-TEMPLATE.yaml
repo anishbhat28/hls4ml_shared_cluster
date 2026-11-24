@@ -11,6 +11,12 @@ spec:
       restartPolicy: Never
       nodeSelector:
         topology.kubernetes.io/region: us-west
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [node-2-10.sdsc.optiputer.net]}
       containers:
       - name: card
         image: gitlab-registry.nrp-nautilus.io/nrp/coder-images/vivado-vitis@sha256:92345d9af99ad2aa2265578bd789a94186949196bebe9a4839600f87bab5cecb
