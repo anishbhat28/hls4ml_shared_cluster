@@ -1,0 +1,22 @@
+# Lets the pipeline driver create/watch/delete Jobs and read their logs in hls4ml-nrp (nothing else).
+apiVersion: v1
+kind: ServiceAccount
+metadata: {name: hls4ml-pipe, namespace: hls4ml-nrp}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: hls4ml-pipe, namespace: hls4ml-nrp}
+rules:
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["get", "list", "watch", "create", "delete"]
+- apiGroups: [""]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: hls4ml-pipe, namespace: hls4ml-nrp}
+subjects:
+- {kind: ServiceAccount, name: hls4ml-pipe, namespace: hls4ml-nrp}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: hls4ml-pipe}

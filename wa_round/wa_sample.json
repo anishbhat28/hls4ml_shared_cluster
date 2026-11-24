@@ -1,0 +1,726 @@
+{
+ "seed": 20261124,
+ "source_sha256": "1fc8c35536a0ab9f15cc5ba5ea2a568db0cc77f8c4c42f162fa5f1feb7eb41aa",
+ "frame_size": 108,
+ "families": [
+  "Anomaly",
+  "Automlp",
+  "Cookie",
+  "Jet",
+  "Particle",
+  "Quarks"
+ ],
+ "excluded_families": [
+  "Bipc"
+ ],
+ "sample": [
+  {
+   "name": "wa-anomaly-r1024-p16-res",
+   "family": "Anomaly",
+   "precision": "ap_fixed<16,6>",
+   "reuse_factor": 1024,
+   "strategy": "Resource",
+   "n_in": 128,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 8,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 4,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 128,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 4,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 128,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 2864,
+   "wa_uuid": "9c3ee7e5-a98f-4ec9-9b34-0d1baaa3da26",
+   "wa_model_name": "Anomaly_16b_1024rf_R"
+  },
+  {
+   "name": "wa-anomaly-r1-p16-lat",
+   "family": "Anomaly",
+   "precision": "ap_fixed<16,6>",
+   "reuse_factor": 1,
+   "strategy": "Latency",
+   "n_in": 128,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 8,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 4,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 128,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 4,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 128,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 2864,
+   "wa_uuid": "8e75be00-7e3e-4f3d-8aa1-3e913ec040ec",
+   "wa_model_name": "Anomaly_16b_1rf_L"
+  },
+  {
+   "name": "wa-automlp-r1-p16-res",
+   "family": "Automlp",
+   "precision": "ap_fixed<16,6>",
+   "reuse_factor": 1,
+   "strategy": "Resource",
+   "n_in": 7,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 12,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 16,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 12,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 2,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 534,
+   "wa_uuid": "4705b427-e733-41ed-bda3-6cc20c46fb96",
+   "wa_model_name": "Automlp_16b_1rf_R"
+  },
+  {
+   "name": "wa-automlp-r1024-p16-lat",
+   "family": "Automlp",
+   "precision": "ap_fixed<16,6>",
+   "reuse_factor": 1024,
+   "strategy": "Latency",
+   "n_in": 7,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 12,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 16,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 12,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 2,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 534,
+   "wa_uuid": "0755003d-fac1-4914-9051-bc9a85e03624",
+   "wa_model_name": "Automlp_16b_1024rf_L"
+  },
+  {
+   "name": "wa-cookie-r128-p8-lat",
+   "family": "Cookie",
+   "precision": "ap_fixed<8,3>",
+   "reuse_factor": 128,
+   "strategy": "Latency",
+   "n_in": 512,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 4,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 5,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 3433,
+   "wa_uuid": "5f97c105-e8db-4856-99c8-6f244035d9f6",
+   "wa_model_name": "Cookie_8b_128rf_L"
+  },
+  {
+   "name": "wa-cookie-r128-p8-res",
+   "family": "Cookie",
+   "precision": "ap_fixed<8,3>",
+   "reuse_factor": 128,
+   "strategy": "Resource",
+   "n_in": 512,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 4,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 5,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 3433,
+   "wa_uuid": "62825ea7-7137-4533-92d7-d441af4c40ba",
+   "wa_model_name": "Cookie_8b_128rf_R"
+  },
+  {
+   "name": "wa-jet-r1024-p16-res",
+   "family": "Jet",
+   "precision": "ap_fixed<16,6>",
+   "reuse_factor": 1024,
+   "strategy": "Resource",
+   "n_in": 16,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 5,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 2821,
+   "wa_uuid": "cc933a28-ea40-4c6e-94eb-19bb770284e0",
+   "wa_model_name": "Jet_16b_1024rf_R"
+  },
+  {
+   "name": "wa-jet-r128-p8-lat",
+   "family": "Jet",
+   "precision": "ap_fixed<8,3>",
+   "reuse_factor": 128,
+   "strategy": "Latency",
+   "n_in": 16,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 5,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 2821,
+   "wa_uuid": "3222c8ce-093d-473f-a983-3bd5e69e6b09",
+   "wa_model_name": "Jet_8b_128rf_L"
+  },
+  {
+   "name": "wa-particle-r1-p8-res",
+   "family": "Particle",
+   "precision": "ap_fixed<8,3>",
+   "reuse_factor": 1,
+   "strategy": "Resource",
+   "n_in": 14,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 3,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 2691,
+   "wa_uuid": "4107d0be-42b6-4158-9f36-c8a56530d5de",
+   "wa_model_name": "Particle_8b_1rf_R"
+  },
+  {
+   "name": "wa-particle-r1-p2-res",
+   "family": "Particle",
+   "precision": "ap_fixed<2,1>",
+   "reuse_factor": 1,
+   "strategy": "Resource",
+   "n_in": 14,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 3,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 2691,
+   "wa_uuid": "a7ab27fb-bd8e-4dfb-bc4f-fc37b71e548c",
+   "wa_model_name": "Particle_2b_1rf_R"
+  },
+  {
+   "name": "wa-quarks-r128-p16-lat",
+   "family": "Quarks",
+   "precision": "ap_fixed<16,6>",
+   "reuse_factor": 128,
+   "strategy": "Latency",
+   "n_in": 10,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 1,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "sigmoid",
+     "use_bias": true
+    }
+   ],
+   "params": 385,
+   "wa_uuid": "e52443e5-a588-4cfc-9d56-0d24ba75bb95",
+   "wa_model_name": "Quarks_16b_128rf_L"
+  },
+  {
+   "name": "wa-quarks-r1-p16-lat",
+   "family": "Quarks",
+   "precision": "ap_fixed<16,6>",
+   "reuse_factor": 1,
+   "strategy": "Latency",
+   "n_in": 10,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 1,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "sigmoid",
+     "use_bias": true
+    }
+   ],
+   "params": 385,
+   "wa_uuid": "c547deb4-f314-4e7d-9e7b-88bda5d6f7ff",
+   "wa_model_name": "Quarks_16b_1rf_L"
+  }
+ ]
+}

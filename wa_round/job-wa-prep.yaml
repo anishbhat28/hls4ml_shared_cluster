@@ -1,0 +1,37 @@
+# Builds the 12 sampled models + inputs into /work/wa (a few minutes, 1 CPU / 4 Gi, no card).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: wa-prep
+  namespace: hls4ml-nrp
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 1209600
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext: {runAsUser: 1000, runAsGroup: 1000}
+      nodeSelector:
+        topology.kubernetes.io/region: us-west
+      containers:
+      - name: prep
+        image: gitlab-registry.nrp-nautilus.io/nrp/coder-images/vivado-vitis@sha256:92345d9af99ad2aa2265578bd789a94186949196bebe9a4839600f87bab5cecb
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -eo pipefail
+          mkdir -p /work/wa
+          cp /cfg/wa_sample.json /cfg/prep_wa.py /cfg/sample_wa.py /work/wa/
+          python3 /cfg/prep_wa.py /cfg/wa_sample.json /work/wa
+          ls -lR /work/wa | head -60
+        resources:
+          requests: {cpu: "1", memory: 4Gi}
+          limits:   {cpu: "1", memory: 4Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: cfg,  mountPath: /cfg}
+      volumes:
+      - name: work
+        persistentVolumeClaim: {claimName: hls4ml-work}
+      - name: cfg
+        configMap: {name: wa-prep}
