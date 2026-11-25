@@ -1,1 +1,3 @@
 - 2026-11-24 20:58 UTC: wa-quarks-r1-p16-lat s3 failed on node-2-10.sdsc.optiputer.net: XRT 'Can't reach out to mgmt for xclbin downloading' (host card driver, err -110). Card stage now excludes node-2-10; s3 rerun with --only s3. Build (s1, s2) unaffected.
+- 2026-11-25 00:41 UTC: wa-jet-r128-p8-lat s3 failed on node-2-10 (same XRT mgmt error; rendered before the exclusion); rerun with --only s3.
+- wa-anomaly-r1024-p16-res: s1 OOMKilled after ~3 h at 6 Gi in HLS (module dense_resource_rf_gt_nin, RF > n_in). Recorded as outcome 'HLS did not finish'; not rerun.
