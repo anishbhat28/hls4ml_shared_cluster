@@ -1,0 +1,724 @@
+{
+ "seed": 20261126,
+ "source_sha256": "1fc8c35536a0ab9f15cc5ba5ea2a568db0cc77f8c4c42f162fa5f1feb7eb41aa",
+ "frame_size": 108,
+ "excluded": "Bipc (residual Add layers); the 12 batch-1 designs",
+ "families": [
+  "Anomaly",
+  "Automlp",
+  "Cookie",
+  "Jet",
+  "Particle",
+  "Quarks"
+ ],
+ "sample": [
+  {
+   "name": "wa-anomaly-r1024-p8-res",
+   "family": "Anomaly",
+   "precision": "ap_fixed<8,3>",
+   "reuse_factor": 1024,
+   "strategy": "Resource",
+   "n_in": 128,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 8,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 4,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 128,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 4,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 128,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 2864,
+   "wa_uuid": "1d3a9271-bb21-46f7-a928-48272ce7193f",
+   "wa_model_name": "Anomaly_8b_1024rf_R"
+  },
+  {
+   "name": "wa-anomaly-r128-p2-res",
+   "family": "Anomaly",
+   "precision": "ap_fixed<2,1>",
+   "reuse_factor": 128,
+   "strategy": "Resource",
+   "n_in": 128,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 8,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 4,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 128,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 4,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 128,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 2864,
+   "wa_uuid": "94394a1c-cebb-41b5-97ba-053c2cbb4444",
+   "wa_model_name": "Anomaly_2b_128rf_R"
+  },
+  {
+   "name": "wa-automlp-r128-p16-lat",
+   "family": "Automlp",
+   "precision": "ap_fixed<16,6>",
+   "reuse_factor": 128,
+   "strategy": "Latency",
+   "n_in": 7,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 12,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 16,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 12,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 2,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 534,
+   "wa_uuid": "08899062-2fac-4cd8-8c35-4678076c0341",
+   "wa_model_name": "Automlp_16b_128rf_L"
+  },
+  {
+   "name": "wa-automlp-r1024-p2-res",
+   "family": "Automlp",
+   "precision": "ap_fixed<2,1>",
+   "reuse_factor": 1024,
+   "strategy": "Resource",
+   "n_in": 7,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 12,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 16,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 12,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 2,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 534,
+   "wa_uuid": "36b4d64d-8c42-4320-adc4-a82339843784",
+   "wa_model_name": "Automlp_2b_1024rf_R"
+  },
+  {
+   "name": "wa-cookie-r128-p16-lat",
+   "family": "Cookie",
+   "precision": "ap_fixed<16,6>",
+   "reuse_factor": 128,
+   "strategy": "Latency",
+   "n_in": 512,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 4,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 5,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 3433,
+   "wa_uuid": "bfc05050-5933-4357-afc0-782c3c9871d3",
+   "wa_model_name": "Cookie_16b_128rf_L"
+  },
+  {
+   "name": "wa-cookie-r1-p8-res",
+   "family": "Cookie",
+   "precision": "ap_fixed<8,3>",
+   "reuse_factor": 1,
+   "strategy": "Resource",
+   "n_in": 512,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 4,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 5,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 3433,
+   "wa_uuid": "7efb5b4e-0e1d-4b1e-a030-e65c830dba5d",
+   "wa_model_name": "Cookie_8b_1rf_R"
+  },
+  {
+   "name": "wa-jet-r1024-p2-lat",
+   "family": "Jet",
+   "precision": "ap_fixed<2,1>",
+   "reuse_factor": 1024,
+   "strategy": "Latency",
+   "n_in": 16,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 5,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 2821,
+   "wa_uuid": "9bf554fc-02eb-4516-9e17-0417c78bcfc4",
+   "wa_model_name": "Jet_2b_1024rf_L"
+  },
+  {
+   "name": "wa-jet-r1-p2-lat",
+   "family": "Jet",
+   "precision": "ap_fixed<2,1>",
+   "reuse_factor": 1,
+   "strategy": "Latency",
+   "n_in": 16,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 5,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 2821,
+   "wa_uuid": "cb4208e9-f4ec-4508-a127-e61713fa4427",
+   "wa_model_name": "Jet_2b_1rf_L"
+  },
+  {
+   "name": "wa-particle-r128-p2-lat",
+   "family": "Particle",
+   "precision": "ap_fixed<2,1>",
+   "reuse_factor": 128,
+   "strategy": "Latency",
+   "n_in": 14,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 3,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 2691,
+   "wa_uuid": "ee25387d-83ea-4d27-a105-d01ae8728a92",
+   "wa_model_name": "Particle_2b_128rf_L"
+  },
+  {
+   "name": "wa-particle-r1024-p2-res",
+   "family": "Particle",
+   "precision": "ap_fixed<2,1>",
+   "reuse_factor": 1024,
+   "strategy": "Resource",
+   "n_in": 14,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 3,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "softmax",
+     "use_bias": true
+    }
+   ],
+   "params": 2691,
+   "wa_uuid": "0e85b020-3749-4e4d-ac93-a44f053ea57b",
+   "wa_model_name": "Particle_2b_1024rf_R"
+  },
+  {
+   "name": "wa-quarks-r1024-p2-res",
+   "family": "Quarks",
+   "precision": "ap_fixed<2,1>",
+   "reuse_factor": 1024,
+   "strategy": "Resource",
+   "n_in": 10,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 1,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "sigmoid",
+     "use_bias": true
+    }
+   ],
+   "params": 385,
+   "wa_uuid": "b379766c-1fc4-4ddd-8c8f-01671d294e2d",
+   "wa_model_name": "Quarks_2b_1024rf_R"
+  },
+  {
+   "name": "wa-quarks-r128-p16-res",
+   "family": "Quarks",
+   "precision": "ap_fixed<16,6>",
+   "reuse_factor": 128,
+   "strategy": "Resource",
+   "n_in": 10,
+   "layers": [
+    {
+     "class": "Dense",
+     "units": 32,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "relu",
+     "use_bias": true
+    },
+    {
+     "class": "Dense",
+     "units": 1,
+     "activation": null,
+     "use_bias": true
+    },
+    {
+     "class": "Activation",
+     "units": null,
+     "activation": "sigmoid",
+     "use_bias": true
+    }
+   ],
+   "params": 385,
+   "wa_uuid": "3a3f2dca-5b03-44d4-9918-2282eb4440fb",
+   "wa_model_name": "Quarks_16b_128rf_R"
+  }
+ ]
+}

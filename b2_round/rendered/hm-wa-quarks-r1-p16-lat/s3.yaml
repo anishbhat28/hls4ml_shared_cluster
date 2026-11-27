@@ -1,0 +1,103 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hm-wa-quarks-r1-p16-lat-s3
+  labels: {app: hls4ml-pipe, design: hm-wa-quarks-r1-p16-lat}
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 1209600
+  template:
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        topology.kubernetes.io/region: us-west
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - {key: kubernetes.io/hostname, operator: NotIn, values: [node-2-10.sdsc.optiputer.net]}
+      containers:
+      - name: card
+        image: gitlab-registry.nrp-nautilus.io/nrp/coder-images/vivado-vitis@sha256:92345d9af99ad2aa2265578bd789a94186949196bebe9a4839600f87bab5cecb
+        env:
+        - {name: NAME, value: "hm-wa-quarks-r1-p16-lat"}
+        - {name: DIR,  value: "/work/pipe/hm-wa-quarks-r1-p16-lat"}
+        - {name: DATA_DIR, value: "/work/wa/data/wa-quarks-r1-p16-lat"}
+        - name: NODE_NAME
+          valueFrom: {fieldRef: {fieldPath: spec.nodeName}}
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -eo pipefail
+          echo "card stage $NAME start $(date) node=$NODE_NAME dir=$DIR"
+          source /opt/xilinx/xrt/setup.sh
+          xbutil examine | grep -E "xilinx_u55c|Version" || true
+          python3 - <<'PY'
+          import os, re, json, time
+          import numpy as np, pyxrt
+
+          name, d = os.environ['NAME'], os.environ['DIR']
+          out = f'/work/pipe/{name}'
+          os.makedirs(out, exist_ok=True)
+          res = {'design': name, 'node': os.environ['NODE_NAME'], 'build_dir': d}
+          xcl = os.path.join(d, 'myproject.xclbin')
+          if not os.path.exists(xcl):
+              res['outcome'] = 'no_xclbin'
+          else:
+              dd = os.environ['DATA_DIR']
+              data = {t: np.ascontiguousarray(np.load(f'{dd}/X_{t}.npy'), dtype=np.float32) for t in ['test', 'stress']}
+              Y = np.load(f'{dd}/Y_test.npy') if os.path.exists(f'{dd}/Y_test.npy') else None
+              meta = json.load(open(os.path.join(d, 'meta.json')))
+              dev = pyxrt.device(0)
+              TO, FROM = pyxrt.xclBOSyncDirection.XCL_BO_SYNC_BO_TO_DEVICE, pyxrt.xclBOSyncDirection.XCL_BO_SYNC_BO_FROM_DEVICE
+              t = time.perf_counter(); uuid = dev.load_xclbin(pyxrt.xclbin(xcl)); res['load_s'] = round(time.perf_counter() - t, 3)
+              k = pyxrt.kernel(dev, uuid, meta['kernel'])
+              info_path = os.path.join(d, 'xclbin_info.txt')
+              m = re.search(r'Achieved Freq:\s*([\d.]+)', open(info_path).read()) if os.path.exists(info_path) else None
+              res['kernel_clock_mhz'] = float(m.group(1)) if m else None
+
+              def run(X, n_out):
+                  N = len(X)
+                  bi = pyxrt.bo(dev, X.nbytes, pyxrt.bo.normal, k.group_id(0))
+                  bo = pyxrt.bo(dev, N * n_out * 4, pyxrt.bo.normal, k.group_id(1))
+                  bi.write(X.tobytes(), 0); bi.sync(TO)
+                  t = time.perf_counter(); r = k(bi, bo, np.uint32(N)); r.wait(); dt = time.perf_counter() - t
+                  bo.sync(FROM)
+                  # map(), not read(): read() returns a zero-stride array under numpy 2
+                  y = np.frombuffer(bo.map(), dtype=np.float32, count=N * n_out).reshape(N, n_out).copy()
+                  return y, dt
+
+              exact = True
+              for tag, X in data.items():
+                  cs = np.load(os.path.join(d, f'y_csim_{tag}.npy'))
+                  kr = np.load(os.path.join(d, f'y_keras_{tag}.npy'))
+                  n_out = cs.shape[1]
+                  hw, dt = run(X, n_out)
+                  same = (hw.view(np.uint32) == cs.view(np.uint32)).all(1)
+                  exact &= bool(same.all())
+                  res[f'{tag}_n'] = len(X)
+                  res[f'{tag}_hw_vs_csim_mismatch_rows'] = int((~same).sum())
+                  res[f'{tag}_hw_vs_keras_argmax_agree'] = round(float((hw.argmax(1) == kr.argmax(1)).mean()), 5)
+                  if tag == 'test':
+                      if Y is not None:
+                          res['hw_accuracy'] = round(float((hw.argmax(1) == Y.argmax(1)).mean()), 5)
+                          res['keras_accuracy'] = round(float((kr.argmax(1) == Y.argmax(1)).mean()), 5)
+                      fin = np.isfinite(kr).all(1)
+                      res['max_abs_diff_vs_keras'] = round(float(np.abs(hw[fin] - kr[fin]).max()), 6)
+                      res['inferences_per_s'] = round(len(X) / dt)
+                      res['latency_1_us'] = round(sorted(run(X[:1], n_out)[1] for _ in range(5))[2] * 1e6, 1)
+              res['bitexact_vs_csim'] = exact
+              res['outcome'] = 'ok' if exact else 'mismatch'
+          json.dump(res, open(f'{out}/result.json', 'w'), indent=1)
+          print('RESULT ' + json.dumps(res))
+          PY
+          echo "card stage $NAME end $(date)"
+        resources:
+          requests: {cpu: "1", memory: 4Gi, amd.com/xilinx_u55c_gen3x16_xdma_base_3-0: 1}
+          limits:   {cpu: "1", memory: 4Gi, amd.com/xilinx_u55c_gen3x16_xdma_base_3-0: 1}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+      volumes:
+      - name: work
+        persistentVolumeClaim: {claimName: hls4ml-work}

@@ -1,0 +1,36 @@
+# Builds the 12 batch-2 models + inputs into /work/wa2 (a few minutes, 1 CPU / 4 Gi, no card).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: b2-prep
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 1209600
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext: {runAsUser: 1000, runAsGroup: 1000}
+      nodeSelector:
+        topology.kubernetes.io/region: us-west
+      containers:
+      - name: prep
+        image: gitlab-registry.nrp-nautilus.io/nrp/coder-images/vivado-vitis@sha256:92345d9af99ad2aa2265578bd789a94186949196bebe9a4839600f87bab5cecb
+        command: ["/bin/bash", "-c"]
+        args:
+        - |
+          set -eo pipefail
+          mkdir -p /work/wa2
+          cp /cfg/wa_sample_b2.json /cfg/prep_wa.py /cfg/sample_b2.py /work/wa2/
+          python3 /cfg/prep_wa.py /cfg/wa_sample_b2.json /work/wa2
+          ls /work/wa2/models /work/wa2/data
+        resources:
+          requests: {cpu: "1", memory: 4Gi}
+          limits:   {cpu: "1", memory: 4Gi}
+        volumeMounts:
+        - {name: work, mountPath: /work}
+        - {name: cfg,  mountPath: /cfg}
+      volumes:
+      - name: work
+        persistentVolumeClaim: {claimName: hls4ml-work}
+      - name: cfg
+        configMap: {name: b2-prep}
