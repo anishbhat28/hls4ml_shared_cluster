@@ -6,7 +6,7 @@ metadata:
   name: pipe-__NAME__
   labels: {app: hls4ml-pipe, design: __NAME__}
 spec:
-  backoffLimit: 0
+  backoffLimit: 5
   ttlSecondsAfterFinished: 1209600
   activeDeadlineSeconds: 604800
   template:
@@ -24,28 +24,40 @@ spec:
         args:
         - |
           NS=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace); NAME=__NAME__; CARD=__CARD__; FROM=__FROM__; ONLY="__ONLY__"; STOP_ON_RISK=__STOP_ON_RISK__
+          RUN=__RUN__   # one value per ./launch.sh call; a restarted controller pod sees the same value and resumes
+          ADOPT=__ADOPT__   # 1 = follow stage Jobs that already exist (from an earlier run) instead of rerunning them
           OUT=/work/pipe/$NAME
-          [ "$FROM" = s1 ] && [ -z "$ONLY" ] && rm -rf $OUT
-          mkdir -p $OUT; rm -f $OUT/result.json
+          if [ "$(cat $OUT/.run_id 2>/dev/null)" = "$RUN" ]; then RESUME=1; else RESUME=0; fi
+          [ "$ADOPT" = 1 ] && RESUME=1 && echo $RUN > $OUT/.run_id
+          if [ $RESUME = 0 ]; then
+            [ "$FROM" = s1 ] && [ -z "$ONLY" ] && rm -rf $OUT
+            mkdir -p $OUT; rm -f $OUT/result.json; echo $RUN > $OUT/.run_id
+          fi
           log() { echo "$(date -u '+%a %H:%M:%S UTC') $*" | tee -a $OUT/pipeline.log; }
           result() { printf '{"design": "%s", "outcome": "%s"%s}\n' "$NAME" "$1" "${2:-}" > $OUT/result.json; log "RESULT $(cat $OUT/result.json)"; }
-          run() {  # stage timeout_s
-            local s=$1 tmo=$2 job=$NAME-$1 t0 st fl f=/jobs/$1.yaml
-            [ "$s" = s1 ] && [ -n "$S1FILE" ] && f=$S1FILE
-            kubectl -n $NS delete job $job --ignore-not-found --wait=true >/dev/null
-            kubectl -n $NS apply -f $f >/dev/null && log "started $job ($(grep -m1 -o 'memory: [0-9]*Gi' $f))"
+          jget() { kubectl -n $NS get job $1 -o jsonpath="$2" 2>/dev/null; }
+          run() {  # stage timeout_s [yaml]
+            local s=$1 tmo=$2 f=${3:-/jobs/$1.yaml} job=$NAME-$1 t0 st fl
+            if [ "$(jget $job '{.metadata.labels.pipe-run}')" = "$RUN" ] || { [ "$ADOPT" = 1 ] && [ -n "$(jget $job '{.metadata.name}')" ]; }; then
+              log "$job already started by this run ($(jget $job '{.spec.template.spec.containers[0].resources.limits.memory}')): following it"
+            else
+              kubectl -n $NS delete job $job --ignore-not-found --wait=true >/dev/null
+              kubectl -n $NS apply -f $f >/dev/null && kubectl -n $NS label job $job pipe-run=$RUN --overwrite >/dev/null
+              log "started $job ($(grep -m1 -o 'memory: [0-9]*Gi' $f))"
+            fi
             t0=$(date +%s)
             while true; do
-              st=$(kubectl -n $NS get job $job -o jsonpath='{.status.succeeded}' 2>/dev/null)
-              fl=$(kubectl -n $NS get job $job -o jsonpath='{.status.conditions[?(@.type=="Failed")].status}' 2>/dev/null)
+              st=$(jget $job '{.status.succeeded}')
+              fl=$(jget $job '{.status.conditions[?(@.type=="Failed")].status}')
               if [ "$st" = 1 ]; then
-                kubectl -n $NS logs job/$job > $OUT/$s.log 2>&1; img; log "$job succeeded ($(( ($(date +%s)-t0)/60 )) min)"; return 0
+                kubectl -n $NS logs job/$job > $OUT/$s.log 2>&1; img; log "$job succeeded ($(( ($(date +%s)-t0)/60 )) min since followed)"; return 0
               fi
               if [ "$fl" = True ]; then
                 kubectl -n $NS logs job/$job > $OUT/$s.log 2>&1; img
                 { kubectl -n $NS get pod -l job-name=$job -o jsonpath='{.items[0].status.containerStatuses[0].state.terminated.reason}'; echo
-                  kubectl -n $NS get job $job -o jsonpath='{.status.conditions[?(@.type=="Failed")].reason}'; echo; } > $OUT/${s}_reason.txt 2>/dev/null
-                log "$job FAILED ($(( ($(date +%s)-t0)/60 )) min): $(tr '\n' ' ' < $OUT/${s}_reason.txt)"; return 1
+                  jget $job '{.status.conditions[?(@.type=="Failed")].reason}'; echo
+                  jget $job '{.spec.template.spec.containers[0].resources.limits.memory}'; echo; } > $OUT/${s}_reason.txt 2>/dev/null
+                log "$job FAILED: $(tr '\n' ' ' < $OUT/${s}_reason.txt)"; return 1
               fi
               if [ $(( $(date +%s) - t0 )) -gt $tmo ]; then log "$job timed out after $tmo s"; return 2; fi
               sleep 60
@@ -53,16 +65,16 @@ spec:
           }
           img() { echo "$s $(kubectl -n $NS get pod -l job-name=$job -o jsonpath='{.items[0].status.containerStatuses[0].imageID}' 2>/dev/null)" >> $OUT/image_digest.txt; }
           want() { if [ -n "$ONLY" ]; then [ "$ONLY" = "$1" ]; else [[ "$1" > "$FROM" || "$1" = "$FROM" ]]; fi; }
-          log "pipeline $NAME from=$FROM only=${ONLY:-none}"
+          log "pipeline $NAME from=$FROM only=${ONLY:-none} run=$RUN resume=$RESUME"
 
           if want s1; then
             if ! run s1 46000; then
-              why=$(grep -o 'OOMKilled' $OUT/s1_reason.txt 2>/dev/null)
-              if [ "$why" = OOMKilled ] && [ -f /jobs/s1big.yaml ]; then
-                log "s1 OOMKilled -> rerun once at 16 Gi (pre-registered rule)"
-                cp /jobs/s1big.yaml /tmp/s1.yaml; S1FILE=/tmp/s1.yaml
-                run s1 46000 || { result s1_error; exit 1; }
-              else result s1_error; exit 1; fi
+              # pre-registered rule: OOMKilled at 6 Gi -> one rerun at 16 Gi
+              if grep -q OOMKilled $OUT/s1_reason.txt && grep -q '^6Gi' $OUT/s1_reason.txt; then
+                log "s1 OOMKilled at 6 Gi -> rerun once at 16 Gi (pre-registered rule)"
+                kubectl -n $NS delete job $NAME-s1 --wait=true >/dev/null
+                run s1 46000 /jobs/s1big.yaml || { result s1_error; exit 0; }
+              else result s1_error; exit 0; fi
             fi
             v=$(grep -o '"verdict": "[A-Z]*' $OUT/gate.json | sed 's/.*"//')
             gate=", \"gate\": $(tr -d '\n' < $OUT/gate.json)"
@@ -71,11 +83,11 @@ spec:
             if [ "$v" = RISK ] && [ "$STOP_ON_RISK" = 1 ]; then result gate_risk "$gate"; exit 0; fi
           fi
           if want s2; then
-            run s2 172800 || { result "$(cat $OUT/link_outcome.txt 2>/dev/null || echo link_error)"; exit 1; }
+            run s2 172800 || { result "$(cat $OUT/link_outcome.txt 2>/dev/null || echo link_error)"; exit 0; }
             [ "$CARD" = 1 ] || result built_no_card
           fi
           if want s3 && [ "$CARD" = 1 ]; then
-            run s3 172800 || { result card_error; exit 1; }
+            run s3 172800 || { result card_error; exit 0; }
             log "RESULT $(tr -d '\n' < $OUT/result.json)"
           fi
           log "pipeline $NAME done"

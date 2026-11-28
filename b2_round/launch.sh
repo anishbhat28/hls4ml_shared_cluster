@@ -4,14 +4,15 @@
 #   ./launch.sh DESIGN                 full run: s1 -> gate -> s2 -> s3 (s3 only if CARD=1)
 #   ./launch.sh DESIGN --only s1       one stage only
 #   ./launch.sh DESIGN --from s2       resume from a stage (uses files already in /work/pipe/DESIGN)
+#   ./launch.sh DESIGN --adopt         pick up stage Jobs that already ran (e.g. after a lost controller) instead of rerunning them
 # DESIGN must have designs/DESIGN.env. Watch: kubectl logs -f job/pipe-DESIGN
 set -e
 cd "$(dirname "$0")"
 D=$1; shift || true
 [ -n "$D" ] && [ -f "designs/$D.env" ] || { echo "usage: $0 DESIGN [--from sN] [--only sN]  (needs designs/DESIGN.env)"; exit 1; }
-FROM=s1; ONLY=; SRC=
+FROM=s1; ONLY=; SRC=; ADOPT=0
 while [ $# -gt 0 ]; do
-  case $1 in --from) FROM=$2; shift 2;; --only) ONLY=$2; shift 2;; --src) SRC=$2; shift 2;; *) echo "unknown option $1"; exit 1;; esac
+  case $1 in --from) FROM=$2; shift 2;; --only) ONLY=$2; shift 2;; --src) SRC=$2; shift 2;; --adopt) ADOPT=1; shift;; *) echo "unknown option $1"; exit 1;; esac
 done
 # defaults = the U55C study setup; designs/*.env override what differs
 CLK=3.333; SLR=SLR2; STOP_ON_RISK=0; MODEL_PATH=; DATA_DIR=/work/rw/data
@@ -33,7 +34,7 @@ render job-s1-TEMPLATE.yaml rendered/$D/s1big.yaml 16Gi      # used only if s1 i
 render job-s2-TEMPLATE.yaml rendered/$D/s2.yaml $S1_MEM
 render job-s3-TEMPLATE.yaml rendered/$D/s3.yaml $S1_MEM
 sed -e "s|__NAME__|$D|g" -e "s|__FROM__|$FROM|g" -e "s|__ONLY__|$ONLY|g" -e "s|__STOP_ON_RISK__|$STOP_ON_RISK|g" \
-    -e "s|__CARD__|$CARD|g" job-pipe-TEMPLATE.yaml > "rendered/$D/pipe.yaml"
+    -e "s|__CARD__|$CARD|g" -e "s|__RUN__|$(date +%s)|g" -e "s|__ADOPT__|$ADOPT|g" job-pipe-TEMPLATE.yaml > "rendered/$D/pipe.yaml"
 if grep -l "__[A-Z0-9_]*__" rendered/$D/*.yaml; then echo "unfilled placeholder above"; exit 1; fi
 kubectl delete job "pipe-$D" --ignore-not-found --wait=true
 kubectl delete configmap "pipe-$D-jobs" --ignore-not-found
